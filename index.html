@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Residual Bin V2 - Dashboard Pemilah Otomatis</title>
+    <title>Smart Residual Bin - Dashboard Pemilah Otomatis</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome Icons -->
@@ -123,6 +123,228 @@
             #loginCard { padding: 1.25rem !important; }
         }
 
+    
+
+        /* ===== V5 MOBILE PROFESSIONAL UI — VISUAL ONLY ===== */
+        @media (max-width: 767px) {
+            :root { color-scheme: light; }
+            body { background: #f6f8fb !important; }
+
+            /* Mobile header becomes a compact two-row command bar. */
+            header {
+                position: sticky;
+                top: 0;
+                min-height: 72px !important;
+                padding: .7rem .8rem !important;
+                border-bottom: 1px solid #e5e7eb !important;
+                box-shadow: 0 2px 12px rgba(15,23,42,.06);
+                background: rgba(255,255,255,.96) !important;
+                backdrop-filter: blur(14px);
+                -webkit-backdrop-filter: blur(14px);
+                align-items: center !important;
+                z-index: 40;
+            }
+            header > div:first-child {
+                flex: 1 1 100%;
+                min-width: 0;
+                gap: .55rem !important;
+            }
+            #openSidebarBtn {
+                width: 38px; height: 38px; flex: 0 0 38px;
+                border-radius: 12px;
+                background: #f1f5f9;
+                display: inline-flex; align-items: center; justify-content: center;
+            }
+            #openSidebarBtn i { font-size: 16px !important; }
+            #pageTitle {
+                max-width: none !important;
+                font-size: .95rem !important;
+                font-weight: 800 !important;
+                letter-spacing: -.02em;
+            }
+            header > div:last-child {
+                flex: 1 1 100%;
+                width: 100%;
+                margin-left: 0 !important;
+                justify-content: space-between !important;
+                gap: .45rem !important;
+                flex-wrap: nowrap !important;
+            }
+            #deviceSelectorWrap {
+                display: flex !important;
+                flex: 1 1 auto;
+                width: auto !important;
+                max-width: none !important;
+                min-width: 0;
+                height: 38px;
+                padding: 0 .65rem !important;
+                border-radius: 12px !important;
+                background: #f8fafc !important;
+            }
+            #deviceSelector {
+                width: 100% !important;
+                max-width: none !important;
+                font-size: .72rem !important;
+                font-weight: 750 !important;
+            }
+            #deviceSelectorWrap i { font-size: 11px !important; }
+
+            /* Keep important live controls visible on phone without changing their behavior. */
+            header .xl\:flex {
+                display: flex !important;
+                height: 38px;
+                padding: .45rem .55rem !important;
+                border-radius: 12px !important;
+                flex: 0 0 auto;
+            }
+            header .xl\:flex > span { display: none; }
+            header .xl\:flex label { transform: scale(.92); transform-origin: center; }
+            #firebaseStatusBadge {
+                height: 38px;
+                padding: 0 .65rem !important;
+                border-radius: 12px !important;
+                flex: 0 0 auto;
+            }
+            #firebaseStatusBadge i { font-size: 12px; }
+            #firebaseStatusTextShort { font-size: .68rem !important; }
+            #serialStatusBadge { display: flex !important; height: 38px; padding: 0 .55rem !important; border-radius: 12px !important; flex: 0 0 auto; }
+            #serialStatusText { display: none; }
+            #serialDot { width: 8px !important; height: 8px !important; }
+            #connectSerialBtn {
+                height: 38px;
+                min-width: 42px;
+                padding: 0 .7rem !important;
+                border-radius: 12px !important;
+                flex: 0 0 auto;
+                box-shadow: 0 5px 14px rgba(5,150,105,.18) !important;
+            }
+            #connectSerialBtn span { display: none !important; }
+            #connectSerialBtn i { margin: 0 !important; }
+
+            main {
+                padding: .85rem !important;
+                padding-bottom: 1.25rem !important;
+                scroll-padding-top: 84px;
+            }
+            .tab-content { gap: .9rem !important; }
+
+            /* Cards: denser hierarchy, larger touch targets, less wasted space. */
+            #tab-beranda .grid,
+            #tab-data-sampah .grid,
+            #tab-riwayat .grid,
+            #tab-lokasi .grid,
+            #tab-pengaturan .grid { gap: .7rem !important; }
+
+            #tab-beranda .grid.grid-cols-1.md\:grid-cols-3 {
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            }
+            #tab-beranda .grid.grid-cols-1.md\:grid-cols-3 > div:nth-child(3) {
+                grid-column: 1 / -1;
+            }
+            #tab-beranda .bg-white,
+            #tab-data-sampah .bg-white,
+            #tab-riwayat .bg-white,
+            #tab-lokasi .bg-white,
+            #tab-pengaturan .bg-white {
+                border-radius: 18px !important;
+                box-shadow: 0 2px 10px rgba(15,23,42,.045) !important;
+            }
+            #tab-beranda .grid.grid-cols-1.md\:grid-cols-3 > div {
+                padding: .9rem !important;
+            }
+            #tab-beranda .grid.grid-cols-1.md\:grid-cols-3 > div > div.flex.justify-between.items-start.mb-3 {
+                margin-bottom: .65rem !important;
+            }
+            #tab-beranda .grid.grid-cols-1.md\:grid-cols-3 h3 { font-size: .8rem !important; }
+            #tab-beranda .grid.grid-cols-1.md\:grid-cols-3 p { font-size: .62rem !important; line-height: .9rem; }
+            #tab-beranda .grid.grid-cols-1.md\:grid-cols-3 .w-10.h-10 {
+                width: 34px !important; height: 34px !important;
+                border-radius: 10px !important;
+                font-size: .9rem !important;
+            }
+            #tab-beranda .grid.grid-cols-1.md\:grid-cols-3 [id^="val-weight-"] {
+                font-size: 1.45rem !important;
+            }
+            #tab-beranda .grid.grid-cols-1.md\:grid-cols-3 .text-xs.font-semibold.flex.items-center {
+                display: none !important;
+            }
+
+            /* Section headers */
+            #tab-beranda h3.font-bold,
+            #tab-data-sampah h3.font-bold,
+            #tab-riwayat h3.font-bold,
+            #tab-lokasi h3.font-bold,
+            #tab-pengaturan h3.font-bold { letter-spacing: -.015em; }
+
+            /* Tables become horizontally scrollable, visually polished. */
+            .overflow-x-auto {
+                border-radius: 14px;
+                scrollbar-width: thin;
+            }
+            table { min-width: 560px; }
+            table th { white-space: nowrap; }
+            table td { white-space: nowrap; }
+
+            /* Analytics controls stack cleanly. */
+            #tab-data-sampah .flex.flex-col.sm\:flex-row {
+                padding: .9rem !important;
+                border-radius: 18px !important;
+            }
+            #tab-data-sampah .range-btn { min-height: 36px; padding-left: .75rem !important; padding-right: .75rem !important; }
+
+            /* Chart cards. */
+            .chart-wrap { min-height: 235px !important; }
+            canvas { max-height: 270px; }
+
+            /* Progress and summary blocks. */
+            #tab-beranda .space-y-4 > div { border-radius: 14px !important; }
+            #tab-beranda .h-3\.5 { height: .7rem !important; }
+
+            /* Map area stays usable on small screens. */
+            #tab-lokasi .relative.h-96,
+            #tab-lokasi [class*="h-96"] {
+                height: 20rem !important;
+                border-radius: 18px !important;
+            }
+
+            /* Settings controls use comfortable touch dimensions. */
+            #tab-pengaturan input,
+            #tab-pengaturan select,
+            #tab-pengaturan button { min-height: 42px; }
+            #tab-pengaturan input[type="range"] { min-height: 24px; }
+
+            /* Sidebar becomes a premium mobile drawer. */
+            #sidebar {
+                width: min(86vw, 330px) !important;
+                box-shadow: 18px 0 50px rgba(15,23,42,.28);
+            }
+            #sidebar .p-5 { padding: 1rem !important; }
+            #sidebar nav { padding: .8rem !important; }
+            #sidebar .nav-item { min-height: 48px; border-radius: 14px !important; }
+
+            /* Login screen on phone. */
+            #loginScreen { padding: .8rem !important; }
+            #loginCard {
+                width: 100% !important;
+                max-width: 430px !important;
+                padding: 1.15rem !important;
+                border-radius: 22px !important;
+                box-shadow: 0 18px 50px rgba(15,23,42,.12) !important;
+            }
+            #loginCard input, #loginCard button { min-height: 46px; }
+        }
+
+        @media (max-width: 420px) {
+            header { min-height: 70px !important; }
+            #deviceSelectorWrap { min-width: 0; }
+            #firebaseStatusBadge { padding-left: .55rem !important; padding-right: .55rem !important; }
+            #serialStatusBadge { padding-left: .45rem !important; padding-right: .45rem !important; }
+            #connectSerialBtn { min-width: 40px; padding-left: .6rem !important; padding-right: .6rem !important; }
+            main { padding-left: .65rem !important; padding-right: .65rem !important; }
+            #tab-beranda .grid.grid-cols-1.md\:grid-cols-3 > div { padding: .8rem !important; }
+            #tab-beranda .grid.grid-cols-1.md\:grid-cols-3 [id^="val-weight-"] { font-size: 1.3rem !important; }
+        }
+
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 antialiased flex h-screen overflow-hidden">
@@ -147,10 +369,10 @@
 
             <form id="loginForm" class="space-y-4">
                 <div>
-                    <label for="loginEmail" class="block text-xs font-semibold text-slate-700 mb-1.5">Username</label>
-                    <input id="loginEmail" type="text" autocomplete="username" required
+                    <label for="loginEmail" class="block text-xs font-semibold text-slate-700 mb-1.5">Email</label>
+                    <input id="loginEmail" type="email" autocomplete="username" required
                            class="w-full bg-slate-50 border border-slate-200 text-sm rounded-xl p-3 text-slate-800 outline-none focus:ring-2 focus:ring-emerald-500"
-                           placeholder="admin">
+                           placeholder="admin@contoh.com">
                 </div>
                 <div>
                     <label for="loginPassword" class="block text-xs font-semibold text-slate-700 mb-1.5">Password</label>
@@ -159,7 +381,7 @@
                            placeholder="••••••••">
                 </div>
                 <div class="rounded-xl bg-emerald-50 border border-emerald-100 px-3 py-2.5 text-[11px] text-emerald-700">
-                    <b>Akun testing:</b> username <b>admin</b> · password <b>admin123</b>
+                    <b>Login utama:</b> gunakan akun yang sudah dibuat di <b>Firebase Authentication</b>.
                 </div>
 
                 <div id="loginError" class="hidden text-xs font-medium text-red-600 bg-red-50 border border-red-100 rounded-xl px-3 py-2.5"></div>
@@ -182,7 +404,7 @@
             </button>
 
             <p class="text-[11px] leading-relaxed text-slate-400 mt-4 text-center">
-                Login lokal tersedia untuk testing. Firebase tetap dapat digunakan untuk sinkronisasi data setelah login.
+                Login utama memakai <b>Firebase Authentication</b>. Mode Demo memakai penyimpanan lokal dan tidak menulis data ke Firebase.
             </p>
             <p id="loginConnectionStatus" class="text-[11px] text-center text-slate-400 mt-2">Menghubungkan ke Firebase...</p>
         </div>
@@ -240,7 +462,7 @@
                     <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></div>
                     <span class="text-slate-300 font-medium">ESP32 System</span>
                 </div>
-                <span class="text-slate-400 text-[10px]">v3.0 Firmware</span>
+                <span class="text-slate-400 text-[10px]">v4.0 Firmware</span>
             </div>
         
             <button id="logoutBtn" onclick="window.logoutUser()" class="w-full hidden bg-slate-800 hover:bg-slate-700 rounded-xl p-3 text-xs text-slate-300 font-medium transition-colors text-left">
@@ -881,10 +1103,10 @@
                 </button>
             </div>
 
-            <p class="text-xs text-slate-500">Status Database: <span id="firebaseModalStatusText" class="font-semibold text-emerald-600">Tersambung (Environment Mode)</span></p>
+            <p class="text-xs text-slate-500">Status Database: <span id="firebaseModalStatusText" class="font-semibold text-emerald-600">Firebase Production</span></p>
 
             <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-[11px] font-mono text-slate-700 space-y-1 overflow-x-auto">
-                <div class="text-slate-400 font-sans font-semibold mb-1">Koleksi Firestore Aktif:</div>
+                <div class="text-slate-400 font-sans font-semibold mb-1">Koleksi Firestore Production:</div>
                 <div>Telemetri: <span class="text-emerald-600 font-bold">/artifacts/{appId}/public/data/telemetry</span></div>
                 <div>Riwayat Log: <span class="text-emerald-600 font-bold">/artifacts/{appId}/public/data/history</span></div>
             </div>
@@ -904,12 +1126,11 @@
     </div>
 
 
-    <!-- SMART RESIDUAL BIN V3 JAVASCRIPT -->
+    <!-- SMART RESIDUAL BIN V4 JAVASCRIPT -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import {
             getAuth,
-            signInAnonymously,
             signInWithCustomToken,
             signInWithEmailAndPassword,
             onAuthStateChanged,
@@ -930,17 +1151,18 @@
             serverTimestamp
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'smart-bin-dashboard';
-        const firebaseConfig = typeof __firebase_config !== 'undefined'
-            ? JSON.parse(__firebase_config)
-            : {
-                apiKey: "demo-api-key",
-                authDomain: "demo-project.firebaseapp.com",
-                projectId: "demo-project",
-                storageBucket: "demo-project.appspot.com",
-                messagingSenderId: "1234567890",
-                appId: "1:1234567890:web:123456"
-            };
+        // Production Firebase project supplied by the owner.
+        // This Web API key is client-side configuration, not a database password.
+        const appId = 'smart-residual-bin';
+        const firebaseConfig = {
+            apiKey: "AIzaSyAGmgYE0U2gipW79OfIuXlp_aWtPhMh_YE",
+            authDomain: "smart-residual-bin.firebaseapp.com",
+            projectId: "smart-residual-bin",
+            storageBucket: "smart-residual-bin.firebasestorage.app",
+            messagingSenderId: "530628537198",
+            appId: "1:530628537198:web:feee8f0616a2ab053cef7f",
+            measurementId: "G-M3CENRDZ3B"
+        };
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
         let firebaseApp = null;
@@ -971,7 +1193,8 @@
             historyLog: [],
             chartRange: 'mingguan',
             serialLastWeights: {},
-            serialLastLoggedWeights: {}
+            serialLastLoggedWeights: {},
+            firebaseAuthMode: false
         };
 
         // Seed local state so the original visual design never appears empty while Firebase initializes.
@@ -1695,14 +1918,22 @@
         };
 
         window.toggleSimulation = function() {
-            // Simulation is NEVER persisted to Firebase.
-            window.appData.isSimulating = Boolean(document.getElementById('simToggle')?.checked);
-            logSerialConsole(`Simulasi Data Live: ${window.appData.isSimulating ? 'AKTIF' : 'NON-AKTIF'}${window.appData.mode === 'demo' ? ' (LOCAL)' : ' (TIDAK DISIMPAN KE FIREBASE)'}`);
-            if (window.appData.isSimulating) startSimulation();
-            else if (window.appData.simInterval) {
-                clearInterval(window.appData.simInterval);
-                window.appData.simInterval = null;
+            // Simulation is explicit-only and NEVER persisted to Firebase.
+            const requested = Boolean(document.getElementById('simToggle')?.checked);
+
+            if (!requested) {
+                window.appData.isSimulating = false;
+                if (window.appData.simInterval) {
+                    clearInterval(window.appData.simInterval);
+                    window.appData.simInterval = null;
+                }
+                logSerialConsole('[SIMULASI] NON-AKTIF.');
+                return;
             }
+
+            window.appData.isSimulating = true;
+            logSerialConsole(`[SIMULASI] AKTIF untuk ${window.appData.mode === 'demo' ? 'Mode Demo / LOCAL' : 'preview lokal'} — TIDAK disimpan ke Firebase.`);
+            startSimulation();
         };
 
         function addDemoHistory(item) {
@@ -1722,12 +1953,12 @@
                 historyLog: window.appData.historyLog,
                 selectedDeviceId: window.appData.selectedDeviceId
             };
-            localStorage.setItem('smartResidualBinV3DemoData', JSON.stringify(payload));
+            localStorage.setItem('smartResidualBinV4DemoData', JSON.stringify(payload));
         }
 
         function loadDemoState() {
             try {
-                const raw = localStorage.getItem('smartResidualBinV3DemoData');
+                const raw = localStorage.getItem('smartResidualBinV4DemoData');
                 if (raw) {
                     const data = JSON.parse(raw);
                     if (data.devices) window.appData.devices = data.devices;
@@ -1802,6 +2033,12 @@
         window.connectArduinoSerial = async function() {
             if (window.appData.serialConnected) {
                 await disconnectSerial();
+                return;
+            }
+
+            if (window.appData.mode !== 'firebase' || !currentUser || !db || !window.appData.firebaseAuthMode) {
+                logSerialConsole('[SERIAL] Mode nyata belum login Firebase. Data ESP32 tidak akan disimpan sebelum login Admin berhasil.');
+                showToast('Login Firebase diperlukan untuk koneksi Arduino/ESP32.', 'error');
                 return;
             }
 
@@ -1965,19 +2202,48 @@
 
         window.logoutUser = async function() {
             try {
-                localStorage.removeItem('smartResidualBinV3LoggedIn');
-                localStorage.removeItem('smartResidualBinV3User');
-                localStorage.removeItem('smartResidualBinV3Mode');
-                if (auth && window.appData?.firebaseAuthMode) await signOut(auth);
+                if (unsubscribeTelemetry) unsubscribeTelemetry();
+                if (unsubscribeDevices) unsubscribeDevices();
+                if (unsubscribeHistory) unsubscribeHistory();
+                unsubscribeTelemetry = null;
+                unsubscribeDevices = null;
+                unsubscribeHistory = null;
+
+                if (window.appData.simInterval) {
+                    clearInterval(window.appData.simInterval);
+                    window.appData.simInterval = null;
+                }
+
+                if (window.appData.serialConnected) {
+                    await disconnectSerial();
+                }
+
+                if (auth && window.appData.firebaseAuthMode) {
+                    await signOut(auth);
+                }
             } catch (e) {
                 console.error(e);
             } finally {
                 currentUser = null;
+                window.appData.firebaseAuthMode = false;
                 window.appData.firebaseConnected = false;
+                window.appData.mode = 'firebase';
+                window.appData.isSimulating = false;
+
+                const toggle = document.getElementById('simToggle');
+                if (toggle) toggle.checked = false;
+
                 document.getElementById('loginScreen')?.classList.remove('hidden');
                 document.getElementById('logoutBtn')?.classList.add('hidden');
-                document.getElementById('loginEmail').value = '';
-                document.getElementById('loginPassword').value = '';
+
+                const email = document.getElementById('loginEmail');
+                const password = document.getElementById('loginPassword');
+                if (email) email.value = '';
+                if (password) password.value = '';
+
+                updateFirebaseStatusUI(false, 'Menunggu Login');
+                const status = document.getElementById('loginConnectionStatus');
+                if (status) status.textContent = 'Silakan login kembali dengan Firebase Authentication atau pilih Mode Demo.';
             }
         };
 
@@ -2066,122 +2332,172 @@
 
         async function ensureDefaultDeviceData() { return; }
 
+        async function initializeFirebaseBackend(email, password) {
+            // IMPORTANT:
+            // - This function is called ONLY after the user chooses the real/admin login.
+            // - Demo mode never initializes Firebase and never creates a Firebase auth session.
+            try {
+                if (!firebaseApp) {
+                    firebaseApp = initializeApp(firebaseConfig);
+                    db = getFirestore(firebaseApp);
+                    auth = getAuth(firebaseApp);
+                    window.db = db;
+                    window.auth = auth;
+                }
+
+                if (!email || !password) {
+                    throw new Error('Email dan password wajib diisi.');
+                }
+
+                const cred = await signInWithEmailAndPassword(auth, email, password);
+                currentUser = cred.user;
+                window.appData.firebaseAuthMode = true;
+
+                setFirebaseConnected(true, 'Online • Firebase');
+                logSerialConsole(`[AUTH] Firebase Authentication berhasil: ${currentUser.email}`);
+                logSerialConsole('[FIREBASE] Firestore menjadi SATU-SATUNYA database untuk data nyata.');
+                await subscribeRealtime();
+
+                return currentUser;
+            } catch (authError) {
+                console.warn('Firebase login failed:', authError);
+                currentUser = null;
+                window.appData.firebaseAuthMode = false;
+                db = db || null;
+                auth = auth || null;
+                setFirebaseConnected(false, firebaseAuthMessage(authError.code));
+                throw authError;
+            }
+        }
+
+        async function enterDashboard(username, mode = 'firebase', firebaseUser = null) {
+            window.appData.mode = mode;
+            window.appData.isSimulating = false;
+
+            // First login is ALWAYS simulation OFF.
+            const toggle = document.getElementById('simToggle');
+            if (toggle) toggle.checked = false;
+            if (window.appData.simInterval) {
+                clearInterval(window.appData.simInterval);
+                window.appData.simInterval = null;
+            }
+
+            if (mode === 'demo') {
+                // Demo is local-only: no Firebase initialization/auth/session.
+                currentUser = null;
+                window.appData.firebaseAuthMode = false;
+                loadDemoState();
+                setFirebaseConnected(false, 'Demo • Local Only');
+                document.getElementById('loginScreen')?.classList.add('hidden');
+                document.getElementById('logoutBtn')?.classList.remove('hidden');
+
+                const label = document.getElementById('currentUserLabel');
+                if (label) label.textContent = 'Keluar • Demo Lokal';
+
+                initAppUI();
+                renderDashboard();
+                renderTables();
+                updateChartsData();
+                logSerialConsole('[AUTH] Mode Demo aktif.');
+                logSerialConsole('[DEMO] Semua telemetry/history simulasi hanya disimpan di localStorage.');
+                logSerialConsole('[DEMO] Firebase TIDAK diinisialisasi dan TIDAK menerima data.');
+                return;
+            }
+
+            currentUser = firebaseUser;
+            window.appData.firebaseAuthMode = true;
+            document.getElementById('loginScreen')?.classList.add('hidden');
+            document.getElementById('logoutBtn')?.classList.remove('hidden');
+
+            const label = document.getElementById('currentUserLabel');
+            if (label) label.textContent = `Keluar • ${firebaseUser?.email || username}`;
+
+            initAppUI();
+            renderDashboard();
+            renderTables();
+            updateChartsData();
+            logSerialConsole('[MODE] Mode nyata aktif.');
+            logSerialConsole('[RULE] Hanya data yang masuk melalui Arduino/ESP32 + Serial yang boleh disimpan ke Firebase.');
+        }
+
         async function initializeFirebase() {
-            const LOCAL_USER = 'admin';
-            const LOCAL_PASS = 'admin123';
             const form = document.getElementById('loginForm');
             const demoBtn = document.getElementById('demoLoginBtn');
             const errorEl = document.getElementById('loginError');
             const statusEl = document.getElementById('loginConnectionStatus');
+            const submitBtn = document.getElementById('loginSubmitBtn');
 
-            const enterDashboard = async (username, mode = 'firebase') => {
-                window.appData.mode = mode;
-                window.appData.isSimulating = false;
-                const toggle = document.getElementById('simToggle');
-                if (toggle) toggle.checked = false;
-
-                currentUser = { uid: `${mode}-${username}`, email: username, isAnonymous: mode === 'demo' };
-                localStorage.setItem('smartResidualBinV3LoggedIn', '1');
-                localStorage.setItem('smartResidualBinV3User', username);
-                localStorage.setItem('smartResidualBinV3Mode', mode);
-                document.getElementById('loginScreen')?.classList.add('hidden');
-                document.getElementById('logoutBtn')?.classList.remove('hidden');
-                const label = document.getElementById('currentUserLabel');
-                if (label) label.textContent = `${mode === 'demo' ? 'Demo' : 'Admin'} • ${username}`;
-
-                if (mode === 'demo') {
-                    loadDemoState();
-                    setFirebaseConnected(false, 'Demo • Local Only');
-                    initAppUI();
-                    logSerialConsole('[AUTH] Mode Demo aktif. Semua data demo hanya disimpan di browser, TIDAK ke Firebase.');
-                    return;
-                }
-
-                initAppUI();
-                logSerialConsole('[AUTH] Login admin berhasil. Menyiapkan Firebase sebagai SATU-SATUNYA database data nyata...');
-                await initializeFirebaseBackend();
-            };
+            // Clean session state. We do not auto-login from localStorage in real mode.
+            window.appData.mode = 'firebase';
+            window.appData.isSimulating = false;
+            const toggle = document.getElementById('simToggle');
+            if (toggle) toggle.checked = false;
 
             form?.addEventListener('submit', async (event) => {
                 event.preventDefault();
-                const username = document.getElementById('loginEmail')?.value.trim();
-                const password = document.getElementById('loginPassword')?.value;
                 errorEl?.classList.add('hidden');
-                if (username === LOCAL_USER && password === LOCAL_PASS) {
-                    await enterDashboard(username, 'firebase');
-                } else if (errorEl) {
-                    errorEl.textContent = 'Username atau password salah. Gunakan admin / admin123 untuk akses utama.';
-                    errorEl.classList.remove('hidden');
+
+                const email = document.getElementById('loginEmail')?.value.trim();
+                const password = document.getElementById('loginPassword')?.value;
+
+                if (!email || !password) {
+                    if (errorEl) {
+                        errorEl.textContent = 'Email dan password wajib diisi.';
+                        errorEl.classList.remove('hidden');
+                    }
+                    return;
+                }
+
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Menghubungkan...';
+                }
+                if (statusEl) statusEl.textContent = 'Memverifikasi akun melalui Firebase Authentication...';
+
+                try {
+                    const user = await initializeFirebaseBackend(email, password);
+                    await enterDashboard(user.email, 'firebase', user);
+                } catch (authError) {
+                    const message = firebaseAuthMessage(authError.code);
+                    if (errorEl) {
+                        errorEl.textContent = message;
+                        errorEl.classList.remove('hidden');
+                    }
+                    if (statusEl) statusEl.textContent = 'Login Firebase gagal. Periksa akun dan koneksi.';
+                } finally {
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = '<i class="fa-solid fa-right-to-bracket mr-2"></i>Masuk';
+                    }
                 }
             });
 
             demoBtn?.addEventListener('click', async () => {
                 errorEl?.classList.add('hidden');
-                await enterDashboard('demo', 'demo');
+                if (statusEl) statusEl.textContent = 'Menyiapkan Mode Demo lokal...';
+                await enterDashboard('demo', 'demo', null);
             });
 
-            if (localStorage.getItem('smartResidualBinV3LoggedIn') === '1') {
-                const savedUser = localStorage.getItem('smartResidualBinV3User') || LOCAL_USER;
-                const savedMode = localStorage.getItem('smartResidualBinV3Mode') || 'firebase';
-                await enterDashboard(savedUser, savedMode);
-                return;
-            }
-
-            if (statusEl) statusEl.textContent = 'Pilih login Admin untuk Firebase, atau Mode Demo untuk database lokal.';
-        }
-
-        async function initializeFirebaseBackend() {
-            // Normal/Admin mode: Firebase is the ONLY persistence layer.
-            // Never initialize Firebase for Demo mode.
-            if (window.appData.mode !== 'firebase') return;
-            try {
-                const config = (typeof __firebase_config !== 'undefined') ? JSON.parse(__firebase_config) : firebaseConfig;
-                if (!config?.apiKey || config.apiKey === 'demo-api-key' || !config?.projectId || config.projectId === 'demo-project') {
-                    throw new Error('Konfigurasi Firebase asli belum dipasang.');
-                }
-                firebaseApp = initializeApp(config);
-                db = getFirestore(firebaseApp);
-                auth = getAuth(firebaseApp);
-                window.db = db;
-                window.auth = auth;
-
-                // Backend auth only; application login remains admin/admin123.
-                // Anonymous auth is used so Firestore can enforce authenticated access without another database.
-                try {
-                    if (initialAuthToken) {
-                        const cred = await signInWithCustomToken(auth, initialAuthToken);
-                        currentUser = cred.user;
-                    } else {
-                        const cred = await signInAnonymously(auth);
-                        currentUser = cred.user;
-                    }
-                } catch (authError) {
-                    throw new Error(`Firebase Authentication gagal: ${firebaseAuthMessage(authError.code)} `);
-                }
-
-                setFirebaseConnected(true, 'Online • Firebase');
-                logSerialConsole(`[FIREBASE] Terhubung. Database nyata: Firestore. Mode simulasi tetap tidak menulis data.`);
-                await subscribeRealtime();
-            } catch (e) {
-                console.warn('Firebase init failed:', e);
-                db = null;
-                auth = null;
-                setFirebaseConnected(false, 'Belum dikonfigurasi');
-                logSerialConsole(`[FIREBASE ERROR] ${e.message}`);
-                showToast('Firebase belum terhubung. Pasang konfigurasi Firebase asli sebelum memakai Arduino/ESP32.', 'error');
+            if (statusEl) {
+                statusEl.textContent = 'Login Admin memakai Firebase. Mode Demo memakai database lokal.';
             }
         }
 
         function firebaseAuthMessage(code) {
             const map = {
-                'auth/invalid-credential': 'Kredensial Firebase tidak valid.',
+                'auth/invalid-credential': 'Email atau password Firebase salah.',
+                'auth/invalid-login-credentials': 'Email atau password Firebase salah.',
                 'auth/invalid-email': 'Format email Firebase tidak valid.',
+                'auth/user-not-found': 'Akun Firebase tidak ditemukan.',
+                'auth/wrong-password': 'Password Firebase salah.',
                 'auth/user-disabled': 'Akun Firebase dinonaktifkan.',
-                'auth/too-many-requests': 'Terlalu banyak percobaan.',
+                'auth/too-many-requests': 'Terlalu banyak percobaan. Coba lagi nanti.',
                 'auth/network-request-failed': 'Jaringan bermasalah.',
-                'auth/operation-not-allowed': 'Anonymous Authentication belum diaktifkan.'
+                'auth/operation-not-allowed': 'Email/Password Authentication belum diaktifkan di Firebase.',
+                'auth/configuration-not-found': 'Konfigurasi Firebase Authentication belum siap.',
+                'auth/unauthorized-domain': 'Domain GitHub Pages belum diizinkan di Firebase Authentication.'
             };
-            return map[code] || `Kode ${code || 'unknown-error'}.`;
+            return map[code] || `Login Firebase gagal (${code || 'unknown-error'}).`;
         }
 
         function initAppUI() {
