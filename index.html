@@ -1,0 +1,2240 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Residual Bin V2 - Dashboard Pemilah Otomatis</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Custom Tailwind Configuration -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        organik: '#10B981',   /* Emerald Green */
+                        anorganik: '#3B82F6', /* Royal Blue */
+                        residual: '#475569',  /* Slate Dark Gray */
+                        brand: {
+                            50: '#f0fdf4',
+                            500: '#10b981',
+                            600: '#059669',
+                            700: '#047857'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    
+        /* ===== V2 RESPONSIVE HARDENING ===== */
+        html, body { min-width: 0; }
+        body { overflow: hidden; }
+        #appRoot, #appRoot > div { min-width: 0; }
+        main { min-width: 0; }
+        .tab-content { min-width: 0; }
+        canvas { max-width: 100%; }
+        .chart-wrap { position: relative; width: 100%; min-height: 260px; }
+        .mobile-safe { min-width: 0; overflow-wrap: anywhere; }
+
+        #loginScreen {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            background:
+                radial-gradient(circle at 20% 10%, rgba(16,185,129,.14), transparent 32%),
+                radial-gradient(circle at 90% 90%, rgba(20,184,166,.12), transparent 30%),
+                #f8fafc;
+        }
+        #loginCard { width: min(430px, 100%); }
+        #loginScreen.hidden { display: none; }
+
+        @media (max-width: 767px) {
+            header {
+                height: auto !important;
+                min-height: 4rem;
+                padding: .75rem !important;
+                gap: .5rem;
+                flex-wrap: wrap;
+            }
+            header > div:first-child { min-width: 0; }
+            #pageTitle {
+                font-size: .95rem;
+                line-height: 1.25rem;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                max-width: 46vw;
+            }
+            #deviceSelectorWrap { max-width: 42vw; }
+            #deviceSelector { max-width: 100%; }
+            header > div:last-child {
+                margin-left: auto;
+                max-width: 100%;
+                flex-wrap: wrap;
+                justify-content: flex-end;
+            }
+            main {
+                padding: .75rem !important;
+            }
+            .tab-content { gap: 1rem; }
+            #tab-lokasi .relative.h-96,
+            #tab-lokasi [class*="h-96"] {
+                height: 22rem !important;
+            }
+            #binDetailModal > div,
+            #addLogModal > div,
+            #firebaseConfigModal > div {
+                max-height: calc(100vh - 2rem);
+                overflow-y: auto;
+            }
+            #serialConsole { height: 14rem !important; }
+            .overflow-x-auto {
+                -webkit-overflow-scrolling: touch;
+            }
+            #connectSerialBtn span { display: none !important; }
+            #connectSerialBtn { padding-left: .65rem !important; padding-right: .65rem !important; }
+        }
+
+        @media (max-width: 420px) {
+            #pageTitle { max-width: 39vw; }
+            #firebaseStatusBadge { padding-left: .55rem !important; padding-right: .55rem !important; }
+            #deviceSelectorWrap { width: 7.5rem; }
+            #deviceSelector { width: 100%; font-size: .7rem; }
+            .grid { min-width: 0; }
+            #loginCard { padding: 1.25rem !important; }
+        }
+
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased flex h-screen overflow-hidden">
+
+    <!-- V3 LOGIN SCREEN -->
+    <section id="loginScreen" aria-label="Login Smart Residual Bin">
+        <div id="loginCard" class="bg-white border border-slate-200 rounded-3xl shadow-2xl p-7 sm:p-8">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center shadow-lg shadow-emerald-500/20 shrink-0">
+                    <i class="fa-solid fa-recycle text-white text-xl"></i>
+                </div>
+                <div class="min-w-0">
+                    <h1 class="font-extrabold text-slate-900 text-lg truncate">Smart Residual Bin</h1>
+                    <p class="text-xs text-slate-500">Dashboard Pemilah Otomatis</p>
+                </div>
+            </div>
+
+            <div class="mb-5">
+                <h2 class="text-xl font-bold text-slate-900">Masuk ke Dashboard</h2>
+                <p class="text-sm text-slate-500 mt-1">Tampilan otomatis menyesuaikan desktop, tablet, dan HP.</p>
+            </div>
+
+            <form id="loginForm" class="space-y-4">
+                <div>
+                    <label for="loginEmail" class="block text-xs font-semibold text-slate-700 mb-1.5">Username</label>
+                    <input id="loginEmail" type="text" autocomplete="username" required
+                           class="w-full bg-slate-50 border border-slate-200 text-sm rounded-xl p-3 text-slate-800 outline-none focus:ring-2 focus:ring-emerald-500"
+                           placeholder="admin">
+                </div>
+                <div>
+                    <label for="loginPassword" class="block text-xs font-semibold text-slate-700 mb-1.5">Password</label>
+                    <input id="loginPassword" type="password" autocomplete="current-password" required
+                           class="w-full bg-slate-50 border border-slate-200 text-sm rounded-xl p-3 text-slate-800 outline-none focus:ring-2 focus:ring-emerald-500"
+                           placeholder="••••••••">
+                </div>
+                <div class="rounded-xl bg-emerald-50 border border-emerald-100 px-3 py-2.5 text-[11px] text-emerald-700">
+                    <b>Akun testing:</b> username <b>admin</b> · password <b>admin123</b>
+                </div>
+
+                <div id="loginError" class="hidden text-xs font-medium text-red-600 bg-red-50 border border-red-100 rounded-xl px-3 py-2.5"></div>
+
+                <button id="loginSubmitBtn" type="submit"
+                        class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 rounded-xl transition-all shadow-sm">
+                    <i class="fa-solid fa-right-to-bracket mr-2"></i>Masuk
+                </button>
+            </form>
+
+            <div class="flex items-center gap-3 my-5">
+                <div class="h-px bg-slate-200 flex-1"></div>
+                <span class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">atau</span>
+                <div class="h-px bg-slate-200 flex-1"></div>
+            </div>
+
+            <button id="demoLoginBtn" type="button"
+                    class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-3 rounded-xl transition-all">
+                <i class="fa-solid fa-flask mr-2"></i>Masuk Mode Demo
+            </button>
+
+            <p class="text-[11px] leading-relaxed text-slate-400 mt-4 text-center">
+                Login lokal tersedia untuk testing. Firebase tetap dapat digunakan untuk sinkronisasi data setelah login.
+            </p>
+            <p id="loginConnectionStatus" class="text-[11px] text-center text-slate-400 mt-2">Menghubungkan ke Firebase...</p>
+        </div>
+    </section>
+
+
+    <!-- SIDEBAR NAV -->
+    <aside id="sidebar" class="w-64 bg-slate-900 text-white flex flex-col justify-between transition-all duration-300 z-30 fixed inset-y-0 left-0 md:relative md:translate-x-0 -translate-x-full">
+        <div>
+            <!-- Logo & Brand Header -->
+            <div class="p-5 border-b border-slate-800 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                        <i class="fa-solid fa-recycle text-white text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-base tracking-tight leading-none text-white">Smart Residual Bin</h1>
+                        <p class="text-xs text-slate-400 mt-1 font-medium">Pemilah Sampah Otomatis</p>
+                    </div>
+                </div>
+                <button id="closeSidebarBtn" class="md:hidden text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="p-4 space-y-1.5">
+                <button onclick="switchTab('beranda')" id="nav-beranda" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-sm transition-colors bg-emerald-600 text-white shadow-lg shadow-emerald-600/20">
+                    <i class="fa-solid fa-house w-5 text-center"></i>
+                    <span>Beranda</span>
+                </button>
+                <button onclick="switchTab('data-sampah')" id="nav-data-sampah" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-colors">
+                    <i class="fa-solid fa-chart-pie w-5 text-center"></i>
+                    <span>Data Sampah</span>
+                </button>
+                <button onclick="switchTab('riwayat')" id="nav-riwayat" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-colors">
+                    <i class="fa-solid fa-clock-rotate-left w-5 text-center"></i>
+                    <span>Riwayat</span>
+                </button>
+                <button onclick="switchTab('lokasi')" id="nav-lokasi" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-colors">
+                    <i class="fa-solid fa-location-dot w-5 text-center"></i>
+                    <span>Lokasi Sampah</span>
+                </button>
+                <button onclick="switchTab('pengaturan')" id="nav-pengaturan" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-colors">
+                    <i class="fa-solid fa-sliders w-5 text-center"></i>
+                    <span>Pengaturan</span>
+                </button>
+            </nav>
+        </div>
+
+        <!-- Sidebar Footer Status -->
+        <div class="p-4 border-t border-slate-800 space-y-2">
+            <div class="bg-slate-800/80 rounded-xl p-3 text-xs flex items-center justify-between border border-slate-700/50">
+                <div class="flex items-center space-x-2">
+                    <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                    <span class="text-slate-300 font-medium">ESP32 System</span>
+                </div>
+                <span class="text-slate-400 text-[10px]">v3.0 Firmware</span>
+            </div>
+        
+            <button id="logoutBtn" onclick="window.logoutUser()" class="w-full hidden bg-slate-800 hover:bg-slate-700 rounded-xl p-3 text-xs text-slate-300 font-medium transition-colors text-left">
+                <i class="fa-solid fa-right-from-bracket mr-2 text-slate-400"></i>
+                <span id="currentUserLabel">Keluar</span>
+            </button>
+</div>
+    </aside>
+
+    <!-- MAIN CONTENT AREA -->
+    <div class="flex-1 flex flex-col h-full overflow-hidden">
+
+        <!-- TOPBAR HEADER -->
+        <header class="bg-white border-b border-slate-200 h-16 px-6 flex items-center justify-between z-10 shrink-0">
+            <div class="flex items-center space-x-3">
+                <button id="openSidebarBtn" class="md:hidden text-slate-600 hover:text-slate-900 focus:outline-none">
+                    <i class="fa-solid fa-bars text-xl"></i>
+                </button>
+                <h2 id="pageTitle" class="text-lg font-bold text-slate-800">Beranda Dashboard</h2>
+            </div>
+
+            <!-- Header Right Section: Controls, Firebase Badge & Web Serial Button -->
+                <!-- V2 DEVICE SELECTOR -->
+                <div id="deviceSelectorWrap" class="hidden sm:flex items-center gap-1.5 bg-slate-100 border border-slate-200 rounded-lg px-2 py-1.5">
+                    <i class="fa-solid fa-microchip text-slate-500 text-[10px]"></i>
+                    <select id="deviceSelector" class="bg-transparent border-0 outline-none text-[11px] font-semibold text-slate-700 cursor-pointer">
+                        <option value="FMIPA-01">FMIPA-01</option>
+                    </select>
+                </div>
+
+            <div class="flex items-center space-x-2 sm:space-x-3">
+                <!-- Live Simulation Toggle -->
+                <div class="hidden xl:flex items-center space-x-2 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
+                    <span class="text-xs font-medium text-slate-600">Simulasi Live</span>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="simToggle" class="sr-only peer" onchange="window.toggleSimulation()">
+                        <div class="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                    </label>
+                </div>
+
+                <!-- Firebase Status Badge -->
+                <button onclick="window.openFirebaseModal()" id="firebaseStatusBadge" class="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-colors">
+                    <i class="fa-solid fa-fire text-amber-500"></i>
+                    <span id="firebaseStatusText" class="hidden sm:inline">Firebase: Connecting...</span>
+                    <span id="firebaseStatusTextShort" class="sm:hidden">DB...</span>
+                </button>
+
+                <!-- Serial Status Badge -->
+                <div id="serialStatusBadge" class="hidden md:flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                    <span id="serialDot" class="w-2 h-2 rounded-full bg-slate-400"></span>
+                    <span id="serialStatusText">Offline</span>
+                </div>
+
+                <!-- WEB SERIAL CONNECT BUTTON -->
+                <button onclick="window.connectArduinoSerial()" id="connectSerialBtn" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3.5 py-2 rounded-xl transition-all shadow-sm hover:shadow flex items-center space-x-2">
+                    <i class="fa-solid fa-plug text-sm"></i>
+                    <span class="hidden sm:inline">Hubungkan Arduino/ESP32</span>
+                    <span class="sm:hidden">Hubungkan</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- MAIN VIEW CONTAINER -->
+        <main class="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar bg-slate-50">
+
+            <!-- TAB 1: BERANDA -->
+            <div id="tab-beranda" class="tab-content space-y-6">
+                <!-- TOP WEIGHT CARDS (Organik, Anorganik, Residual) -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    
+                    <!-- Card Organik -->
+                    <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm relative overflow-hidden group hover:border-emerald-300 transition-all">
+                        <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-emerald-50 rounded-full opacity-60 group-hover:scale-110 transition-transform"></div>
+                        <div class="flex justify-between items-start mb-3 relative z-10">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold text-lg">
+                                    <i class="fa-solid fa-leaf"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-slate-800 text-base">Organik</h3>
+                                    <p class="text-xs text-slate-500">Dapat Didaur Ulang / Kompos</p>
+                                </div>
+                            </div>
+                            <span id="org-pct-badge" class="bg-emerald-100 text-emerald-800 text-xs font-bold px-2.5 py-1 rounded-lg">0%</span>
+                        </div>
+                        <div class="mt-4 flex items-baseline justify-between relative z-10">
+                            <div>
+                                <span id="val-weight-organik" class="text-3xl font-extrabold text-slate-900 tracking-tight">0.0</span>
+                                <span class="text-sm font-semibold text-slate-500 ml-1">kg</span>
+                            </div>
+                            <span class="text-xs text-emerald-600 font-semibold flex items-center">
+                                <i class="fa-solid fa-arrow-trend-up mr-1"></i> Realtime Sync
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Card Anorganik -->
+                    <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm relative overflow-hidden group hover:border-blue-300 transition-all">
+                        <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-blue-50 rounded-full opacity-60 group-hover:scale-110 transition-transform"></div>
+                        <div class="flex justify-between items-start mb-3 relative z-10">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-lg">
+                                    <i class="fa-solid fa-bottle-water"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-slate-800 text-base">Anorganik</h3>
+                                    <p class="text-xs text-slate-500">Plastik, Kaca, Logam</p>
+                                </div>
+                            </div>
+                            <span id="anorg-pct-badge" class="bg-blue-100 text-blue-800 text-xs font-bold px-2.5 py-1 rounded-lg">0%</span>
+                        </div>
+                        <div class="mt-4 flex items-baseline justify-between relative z-10">
+                            <div>
+                                <span id="val-weight-anorganik" class="text-3xl font-extrabold text-slate-900 tracking-tight">0.0</span>
+                                <span class="text-sm font-semibold text-slate-500 ml-1">kg</span>
+                            </div>
+                            <span class="text-xs text-blue-600 font-semibold flex items-center">
+                                <i class="fa-solid fa-arrow-trend-up mr-1"></i> Realtime Sync
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Card Residual -->
+                    <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm relative overflow-hidden group hover:border-slate-400 transition-all">
+                        <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-slate-100 rounded-full opacity-60 group-hover:scale-110 transition-transform"></div>
+                        <div class="flex justify-between items-start mb-3 relative z-10">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 rounded-xl bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-lg">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-slate-800 text-base">Residual</h3>
+                                    <p class="text-xs text-slate-500">Sulit Didaur Ulang</p>
+                                </div>
+                            </div>
+                            <span id="res-pct-badge" class="bg-slate-200 text-slate-800 text-xs font-bold px-2.5 py-1 rounded-lg">0%</span>
+                        </div>
+                        <div class="mt-4 flex items-baseline justify-between relative z-10">
+                            <div>
+                                <span id="val-weight-residual" class="text-3xl font-extrabold text-slate-900 tracking-tight">0.0</span>
+                                <span class="text-sm font-semibold text-slate-500 ml-1">kg</span>
+                            </div>
+                            <span class="text-xs text-slate-600 font-semibold flex items-center">
+                                <i class="fa-solid fa-arrow-trend-up mr-1"></i> Realtime Sync
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MIDDLE SECTION: BIN CAPACITY & METRIC SUMMARY -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    
+                    <!-- Kapasitas Bin Progress Bars -->
+                    <div class="lg:col-span-2 bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm space-y-5">
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                            <div>
+                                <h3 class="font-bold text-slate-800 text-base">Kapasitas Kompartemen Bin</h3>
+                                <p class="text-xs text-slate-500">Monitoring volume fisik kompartemen via Sensor Ultrasonik</p>
+                            </div>
+                            <span class="text-xs bg-emerald-50 text-emerald-700 font-semibold px-3 py-1 rounded-full border border-emerald-200">
+                                <i class="fa-solid fa-bolt text-[10px] mr-1"></i>Firebase Live
+                            </span>
+                        </div>
+
+                        <div class="space-y-4">
+                            <!-- Progress Organik -->
+                            <div>
+                                <div class="flex justify-between text-xs font-semibold mb-1.5">
+                                    <span class="text-emerald-700 flex items-center"><i class="fa-solid fa-circle text-[8px] mr-2"></i>Organik</span>
+                                    <span id="cap-organik-val" class="text-slate-700">0%</span>
+                                </div>
+                                <div class="w-full h-3.5 bg-slate-100 rounded-full overflow-hidden p-0.5 border border-slate-200/60">
+                                    <div id="cap-organik-bar" class="h-full bg-emerald-500 rounded-full transition-all duration-500" style="width: 0%"></div>
+                                </div>
+                            </div>
+
+                            <!-- Progress Anorganik -->
+                            <div>
+                                <div class="flex justify-between text-xs font-semibold mb-1.5">
+                                    <span class="text-blue-700 flex items-center"><i class="fa-solid fa-circle text-[8px] mr-2"></i>Anorganik</span>
+                                    <span id="cap-anorganik-val" class="text-slate-700">0%</span>
+                                </div>
+                                <div class="w-full h-3.5 bg-slate-100 rounded-full overflow-hidden p-0.5 border border-slate-200/60">
+                                    <div id="cap-anorganik-bar" class="h-full bg-blue-500 rounded-full transition-all duration-500" style="width: 0%"></div>
+                                </div>
+                            </div>
+
+                            <!-- Progress Residual -->
+                            <div>
+                                <div class="flex justify-between text-xs font-semibold mb-1.5">
+                                    <span class="text-slate-700 flex items-center"><i class="fa-solid fa-circle text-[8px] mr-2"></i>Residual</span>
+                                    <span id="cap-residual-val" class="text-slate-700">0%</span>
+                                </div>
+                                <div class="w-full h-3.5 bg-slate-100 rounded-full overflow-hidden p-0.5 border border-slate-200/60">
+                                    <div id="cap-residual-bar" class="h-full bg-slate-600 rounded-full transition-all duration-500" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ringkasan Metric Summary -->
+                    <div class="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm flex flex-col justify-between space-y-4">
+                        <h3 class="font-bold text-slate-800 text-base border-b border-slate-100 pb-3">Ringkasan Sistem</h3>
+
+                        <div class="space-y-4">
+                            <!-- Total Sampah Hari Ini -->
+                            <div class="bg-slate-50 rounded-xl p-3.5 border border-slate-200/60 flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-9 h-9 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                                        <i class="fa-solid fa-scale-balanced"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-slate-500 font-medium">Total Sampah Hari Ini</p>
+                                        <p id="total-weight-today" class="text-lg font-bold text-slate-800">0.0 kg</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Status Penuh -->
+                            <div class="bg-slate-50 rounded-xl p-3.5 border border-slate-200/60 flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div id="status-penuh-icon-bg" class="w-9 h-9 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                                        <i id="status-penuh-icon" class="fa-solid fa-circle-check"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-slate-500 font-medium">Status Penuh</p>
+                                        <p id="status-penuh-text" class="text-sm font-bold text-emerald-600">Tidak ada</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Lokasi Perangkat -->
+                            <div class="bg-slate-50 rounded-xl p-3.5 border border-slate-200/60 flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-9 h-9 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center">
+                                        <i class="fa-solid fa-location-dot"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-slate-500 font-medium">Lokasi Aktif</p>
+                                        <p class="text-xs font-bold text-slate-800">Gedung FMIPA (Lantai 1)</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RECENT COLLECTION TABLE -->
+                <div class="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 class="font-bold text-slate-800 text-base">Riwayat Pengumpulan Terbaru</h3>
+                            <p class="text-xs text-slate-500">Log deteksi pemilahan sampah real-time dari Firebase Database</p>
+                        </div>
+                        <button onclick="switchTab('riwayat')" class="text-xs font-semibold text-emerald-600 hover:text-emerald-700 flex items-center">
+                            Lihat Semua <i class="fa-solid fa-chevron-right ml-1 text-[10px]"></i>
+                        </button>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-slate-50 text-slate-500 text-xs uppercase font-semibold border-y border-slate-100">
+                                <tr>
+                                    <th class="py-3 px-4">Waktu</th>
+                                    <th class="py-3 px-4">Jenis Sampah</th>
+                                    <th class="py-3 px-4">Berat (kg)</th>
+                                    <th class="py-3 px-4">Status Pemilahan</th>
+                                </tr>
+                            </thead>
+                            <tbody id="quickHistoryTable" class="divide-y divide-slate-100 text-slate-700">
+                                <tr><td colspan="4" class="py-4 text-center text-xs text-slate-400">Memuat data dari Firebase...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: DATA SAMPAH (ANALYTICS) -->
+            <div id="tab-data-sampah" class="tab-content hidden space-y-6">
+                <!-- Filter Controls & Overview Cards -->
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-base">Analitik & Statistik Volume</h3>
+                        <p class="text-xs text-slate-500">Visualisasi komposisi sampah dan tren akumulasi berat</p>
+                    </div>
+                    <div class="flex items-center space-x-1 bg-slate-100 p-1 rounded-xl border border-slate-200 self-start sm:self-auto">
+                        <button onclick="window.updateChartRange('harian')" id="btn-range-harian" class="range-btn px-3 py-1.5 text-xs font-semibold rounded-lg bg-white text-slate-800 shadow-sm">Harian</button>
+                        <button onclick="window.updateChartRange('mingguan')" id="btn-range-mingguan" class="range-btn px-3 py-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800">Mingguan</button>
+                        <button onclick="window.updateChartRange('bulanan')" id="btn-range-bulanan" class="range-btn px-3 py-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800">Bulanan</button>
+                    </div>
+                </div>
+
+                <!-- KPI STATS -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+                        <p class="text-xs text-slate-500 font-medium">Total Volume Terkumpul</p>
+                        <p id="kpi-total-vol" class="text-2xl font-extrabold text-slate-800 mt-1">0.0 kg</p>
+                        <p class="text-xs text-emerald-600 mt-2 font-medium"><i class="fa-solid fa-circle-check mr-1"></i>Tersinkron dengan Firebase</p>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+                        <p class="text-xs text-slate-500 font-medium">Rata-rata Pemilahan Per-Hari</p>
+                        <p id="kpi-avg-day" class="text-2xl font-extrabold text-slate-800 mt-1">0.0 kg</p>
+                        <p class="text-xs text-blue-600 mt-2 font-medium"><i class="fa-solid fa-chart-line mr-1"></i>Efisiensi pemilahan 98.2%</p>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+                        <p class="text-xs text-slate-500 font-medium">Rasio Daur Ulang (Organik+Anorganik)</p>
+                        <p id="kpi-recycling-ratio" class="text-2xl font-extrabold text-emerald-600 mt-1">0.0%</p>
+                        <p class="text-xs text-slate-500 mt-2 font-medium"><i class="fa-solid fa-recycle mr-1"></i>Didaur ulang otomatis</p>
+                    </div>
+                </div>
+
+                <!-- CHARTS ROW -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Distribution Doughnut Chart -->
+                    <div class="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm flex flex-col justify-between">
+                        <div class="mb-4">
+                            <h4 class="font-bold text-slate-800 text-sm">Persentase Kategori Sampah</h4>
+                            <p class="text-xs text-slate-500">Proporsi jenis sampah terdeteksi</p>
+                        </div>
+                        <div class="relative flex items-center justify-center h-64">
+                            <canvas id="distributionChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Trend Line Chart -->
+                    <div class="lg:col-span-2 bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm">
+                        <div class="mb-4 flex items-center justify-between">
+                            <div>
+                                <h4 class="font-bold text-slate-800 text-sm">Tren Akumulasi Sampah (kg)</h4>
+                                <p class="text-xs text-slate-500">Perbandingan harian kategori sampah</p>
+                            </div>
+                        </div>
+                        <div class="h-64">
+                            <canvas id="trendChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: RIWAYAT LOG -->
+            <div id="tab-riwayat" class="tab-content hidden space-y-6">
+                <div class="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm space-y-5">
+                    
+                    <!-- Search & Filter Header Bar -->
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                        <div>
+                            <h3 class="font-bold text-slate-800 text-base">Riwayat Pengumpulan & Pemilahan Log</h3>
+                            <p class="text-xs text-slate-500">Log transaksi pemilahan dari Firebase Firestore</p>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2.5">
+                            <!-- Category Filter Dropdown -->
+                            <select id="historyFilterCategory" onchange="window.filterHistoryTable()" class="bg-slate-50 border border-slate-200 text-slate-700 text-xs rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                                <option value="ALL">Semua Jenis Sampah</option>
+                                <option value="Organik">Organik</option>
+                                <option value="Anorganik">Anorganik</option>
+                                <option value="Residual">Residual</option>
+                            </select>
+
+                            <!-- Search Input -->
+                            <div class="relative">
+                                <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-xs text-slate-400"></i>
+                                <input type="text" id="historySearchInput" onkeyup="window.filterHistoryTable()" placeholder="Cari data..." class="pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 text-xs text-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 w-36 sm:w-48">
+                            </div>
+
+                            <!-- Add Log Button -->
+                            <button onclick="window.openAddLogModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3 py-2 rounded-xl transition-all flex items-center space-x-1">
+                                <i class="fa-solid fa-plus text-xs"></i>
+                                <span>Tambah Log</span>
+                            </button>
+
+                            <!-- Export CSV Button -->
+                            <button onclick="window.exportHistoryCSV()" class="bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold px-3 py-2 rounded-xl transition-all flex items-center space-x-1.5">
+                                <i class="fa-solid fa-file-csv"></i>
+                                <span>Export</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Full Table -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-slate-50 text-slate-500 text-xs uppercase font-semibold border-y border-slate-100">
+                                <tr>
+                                    <th class="py-3 px-4">Waktu</th>
+                                    <th class="py-3 px-4">Jenis Sampah</th>
+                                    <th class="py-3 px-4">Berat (kg)</th>
+                                    <th class="py-3 px-4">Dampak Kapasitas</th>
+                                    <th class="py-3 px-4">Status</th>
+                                    <th class="py-3 px-4 text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="fullHistoryTable" class="divide-y divide-slate-100 text-slate-700">
+                                <tr><td colspan="6" class="py-6 text-center text-xs text-slate-400">Memuat data riwayat dari Firebase...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 4: LOKASI SAMPAH (FLOOR MAP VISUALIZER) -->
+            <div id="tab-lokasi" class="tab-content hidden space-y-6">
+                <!-- Location Header & Floor Switcher -->
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-base">Denah & Lokasi Smart Bin</h3>
+                        <p class="text-xs text-slate-500">Pemantauan titik lokasi Smart Residual Bin di area Kampus FMIPA</p>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button class="bg-emerald-600 text-white text-xs font-semibold px-3 py-2 rounded-xl">Lantai 1</button>
+                        <button class="bg-slate-100 text-slate-600 hover:bg-slate-200 text-xs font-semibold px-3 py-2 rounded-xl">Lantai 2</button>
+                        <button class="bg-slate-100 text-slate-600 hover:bg-slate-200 text-xs font-semibold px-3 py-2 rounded-xl">Lantai 3</button>
+                    </div>
+                </div>
+
+                <!-- Visual Interactive Map Visualizer -->
+                <div class="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm relative overflow-hidden">
+                    <h4 class="font-bold text-slate-800 text-sm mb-4">Visual Denah FMIPA - Lantai 1</h4>
+                    
+                    <!-- Simulated Floor Layout Graphic -->
+                    <div class="w-full h-80 bg-slate-100 rounded-xl border border-dashed border-slate-300 relative flex items-center justify-center p-4 overflow-hidden">
+                        <div class="absolute inset-0 opacity-10 bg-[radial-gradient(#334155_1px,transparent_1px)] [background-size:16px_16px]"></div>
+                        
+                        <!-- Zone Labels -->
+                        <div class="absolute top-4 left-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Hall Utama & Lobby</div>
+                        <div class="absolute top-4 right-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Lab Komputer</div>
+                        <div class="absolute bottom-4 left-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Kantin</div>
+                        <div class="absolute bottom-4 right-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Auditorium</div>
+
+                        <!-- Bin 1 Marker (Active - FMIPA 01) -->
+                        <div onclick="window.openBinModal('FMIPA-01')" class="absolute top-1/3 left-1/4 transform -translate-x-1/2 -translate-y-1/2 cursor-pointer group">
+                            <div class="relative flex items-center justify-center">
+                                <span class="animate-ping absolute inline-flex h-10 w-10 rounded-full bg-emerald-400 opacity-75"></span>
+                                <div class="w-12 h-12 bg-emerald-500 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/30 group-hover:scale-110 transition-transform">
+                                    <i class="fa-solid fa-trash-can text-lg"></i>
+                                </div>
+                            </div>
+                            <div id="map-bin-1-label" class="bg-slate-900 text-white text-[11px] font-bold px-2 py-1 rounded-lg mt-2 text-center whitespace-nowrap shadow-md">
+                                Bin FMIPA-01 (Syncing...)
+                            </div>
+                        </div>
+
+                        <!-- Bin 2 Marker (FMIPA 02) -->
+                        <div onclick="window.openBinModal('FMIPA-02')" class="absolute top-1/3 right-1/4 transform translate-x-1/2 -translate-y-1/2 cursor-pointer group">
+                            <div class="w-10 h-10 bg-blue-500 text-white rounded-2xl flex items-center justify-center shadow-md shadow-blue-500/30 group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-trash-can text-base"></i>
+                            </div>
+                            <div id="map-bin-2-label" class="bg-slate-900 text-white text-[11px] font-bold px-2 py-1 rounded-lg mt-2 text-center whitespace-nowrap shadow-md">
+                                Bin FMIPA-02 (40%)
+                            </div>
+                        </div>
+
+                        <!-- Bin 3 Marker (FMIPA 03) -->
+                        <div onclick="window.openBinModal('FMIPA-03')" class="absolute bottom-1/4 left-1/3 transform -translate-x-1/2 translate-y-1/2 cursor-pointer group">
+                            <div class="relative flex items-center justify-center">
+                                <span class="animate-ping absolute inline-flex h-10 w-10 rounded-full bg-amber-400 opacity-75"></span>
+                                <div class="w-10 h-10 bg-amber-500 text-white rounded-2xl flex items-center justify-center shadow-md shadow-amber-500/30 group-hover:scale-110 transition-transform">
+                                    <i class="fa-solid fa-triangle-exclamation text-base"></i>
+                                </div>
+                            </div>
+                            <div id="map-bin-3-label" class="bg-slate-900 text-white text-[11px] font-bold px-2 py-1 rounded-lg mt-2 text-center whitespace-nowrap shadow-md">
+                                Bin FMIPA-03 (82%)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 5: PENGATURAN & SERIAL/FIREBASE CONTROL -->
+            <div id="tab-pengaturan" class="tab-content hidden space-y-6">
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    
+                    <!-- Hardware & Firebase Configuration -->
+                    <div class="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm space-y-5">
+                        <h3 class="font-bold text-slate-800 text-base border-b border-slate-100 pb-3 flex items-center justify-between">
+                            <span class="flex items-center"><i class="fa-solid fa-microchip text-emerald-600 mr-2"></i> Konfigurasi Perangkat & Firebase</span>
+                            <button onclick="window.openFirebaseModal()" class="text-xs text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-3 py-1 rounded-lg font-semibold">
+                                <i class="fa-solid fa-fire mr-1"></i> Edit Firebase Config
+                            </button>
+                        </h3>
+
+                        <div class="space-y-4">
+                            <!-- Baud Rate Selection -->
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Baud Rate Serial USB</label>
+                                <select id="baudRateSelect" class="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-xl p-2.5 focus:ring-2 focus:ring-emerald-500 outline-none">
+                                    <option value="115200" selected>115200 bps (Standar ESP32)</option>
+                                    <option value="9600">9600 bps (Standar Arduino Uno/Nano)</option>
+                                    <option value="57600">57600 bps</option>
+                                </select>
+                            </div>
+
+                            <!-- Alert Capacity Threshold -->
+                            <div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <label class="text-xs font-semibold text-slate-700">Ambang Batas Peringatan Penuh (% Kapasitas)</label>
+                                    <span id="thresholdVal" class="text-xs font-bold text-emerald-600">85%</span>
+                                </div>
+                                <input type="range" id="thresholdRange" min="50" max="95" value="85" oninput="document.getElementById('thresholdVal').innerText = this.value + '%'" class="w-full accent-emerald-600 cursor-pointer">
+                            </div>
+
+                            <!-- Actuator Manual Testing Buttons -->
+                            <div class="pt-2">
+                                <label class="block text-xs font-semibold text-slate-700 mb-2">Uji Manual Katup Servo Pemilah (Serial / Firebase Command)</label>
+                                <div class="grid grid-cols-3 gap-2">
+                                    <button onclick="window.sendActuatorCommand('SERVO_ORG')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs font-semibold py-2 rounded-xl transition-all text-center">
+                                        Buka Organik
+                                    </button>
+                                    <button onclick="window.sendActuatorCommand('SERVO_ANORG')" class="bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-semibold py-2 rounded-xl transition-all text-center">
+                                        Buka Anorganik
+                                    </button>
+                                    <button onclick="window.sendActuatorCommand('SERVO_RES')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 text-xs font-semibold py-2 rounded-xl transition-all text-center">
+                                        Buka Residual
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Sensor Calibration -->
+                            <div class="pt-2 border-t border-slate-100">
+                                <label class="block text-xs font-semibold text-slate-700 mb-2">Kalibrasi Sensor Berat (HX711 Load Cell)</label>
+                                <button onclick="window.sendActuatorCommand('TARE_LOADCELL')" class="bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold px-4 py-2 rounded-xl transition-all">
+                                    <i class="fa-solid fa-arrows-rotate mr-1.5"></i> Tare / Set Titik Nol Sensor
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Live Raw Serial Terminal Log Console -->
+                    <div class="bg-slate-900 rounded-2xl p-6 text-white shadow-sm flex flex-col justify-between space-y-4">
+                        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                            <div class="flex items-center space-x-2">
+                                <i class="fa-solid fa-terminal text-emerald-400"></i>
+                                <h3 class="font-bold text-sm">Console Terminal Stream (Serial & Firebase)</h3>
+                            </div>
+                            <button onclick="window.clearSerialConsole()" class="text-[11px] text-slate-400 hover:text-white bg-slate-800 px-2.5 py-1 rounded-lg">
+                                Bersihkan Log
+                            </button>
+                        </div>
+
+                        <!-- Console Feed Box -->
+                        <div id="serialConsole" class="bg-slate-950 rounded-xl p-3 font-mono text-xs text-emerald-400 h-64 overflow-y-auto custom-scrollbar border border-slate-800 space-y-1">
+                            <p class="text-slate-500">[System] Menghubungkan ke Firebase & Siap dikoneksikan ke ESP32...</p>
+                        </div>
+
+                        <div class="text-[11px] text-slate-500 italic">
+                            Format masukan serial JSON: {"org":12.5, "anorg":8.2, "res":7.3, "c_org":60, "c_anorg":40, "c_res":30}
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- BIN DETAIL MODAL -->
+    <div id="binDetailModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div>
+                    <h3 id="modalBinTitle" class="font-bold text-slate-800 text-base">Detail Telemetri Bin</h3>
+                    <p id="modalBinSub" class="text-xs text-slate-500">Gedung FMIPA</p>
+                </div>
+                <button onclick="window.closeBinModal()" class="text-slate-400 hover:text-slate-700">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div class="space-y-3">
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-100 text-xs space-y-2">
+                    <div class="flex justify-between"><span class="text-slate-500">Status Modul Wi-Fi:</span><span class="font-bold text-emerald-600">Online (-62 dBm)</span></div>
+                    <div class="flex justify-between"><span class="text-slate-500">Koneksi Database:</span><span class="font-bold text-emerald-600">Firebase Firestore Active</span></div>
+                    <div class="flex justify-between"><span class="text-slate-500">Terakhir Dikosongkan:</span><span class="font-bold text-slate-800">Hari ini, 10:00 WIB</span></div>
+                </div>
+
+                <div class="space-y-2">
+                    <p class="text-xs font-bold text-slate-700">Kapasitas Kompartemen:</p>
+                    <div class="space-y-1.5 text-xs">
+                        <div class="flex justify-between"><span>Organik</span><span id="modalOrgVal" class="font-bold">0%</span></div>
+                        <div class="w-full bg-slate-100 h-2 rounded-full"><div id="modalOrgBar" class="bg-emerald-500 h-2 rounded-full" style="width:0%"></div></div>
+                        
+                        <div class="flex justify-between"><span>Anorganik</span><span id="modalAnorgVal" class="font-bold">0%</span></div>
+                        <div class="w-full bg-slate-100 h-2 rounded-full"><div id="modalAnorgBar" class="bg-blue-500 h-2 rounded-full" style="width:0%"></div></div>
+
+                        <div class="flex justify-between"><span>Residual</span><span id="modalResVal" class="font-bold">0%</span></div>
+                        <div class="w-full bg-slate-100 h-2 rounded-full"><div id="modalResBar" class="bg-slate-600 h-2 rounded-full" style="width:0%"></div></div>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="window.closeBinModal()" class="w-full bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold py-2.5 rounded-xl transition-all">
+                Tutup
+            </button>
+        </div>
+    </div>
+
+    <!-- ADD LOG MANUAL MODAL -->
+    <div id="addLogModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 class="font-bold text-slate-800 text-base">Tambah Log Manual ke Firebase</h3>
+                <button onclick="window.closeAddLogModal()" class="text-slate-400 hover:text-slate-700">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <form onsubmit="window.submitManualLog(event)" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Jenis Sampah</label>
+                    <select id="manualType" class="w-full bg-slate-50 border border-slate-200 text-xs rounded-xl p-2.5 text-slate-800">
+                        <option value="Organik">Organik</option>
+                        <option value="Anorganik">Anorganik</option>
+                        <option value="Residual">Residual</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Berat (kg)</label>
+                    <input type="number" id="manualWeight" step="0.1" value="1.5" min="0.1" class="w-full bg-slate-50 border border-slate-200 text-xs rounded-xl p-2.5 text-slate-800" required>
+                </div>
+                <div class="flex space-x-2 pt-2">
+                    <button type="button" onclick="window.closeAddLogModal()" class="w-1/2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold py-2.5 rounded-xl">Batal</button>
+                    <button type="submit" class="w-1/2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold py-2.5 rounded-xl">Simpan ke Firebase</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- FIREBASE CONFIG MODAL -->
+    <div id="firebaseConfigModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-fire text-amber-500 text-lg"></i>
+                    <h3 class="font-bold text-slate-800 text-base">Konfigurasi Firebase Proyek</h3>
+                </div>
+                <button onclick="window.closeFirebaseModal()" class="text-slate-400 hover:text-slate-700">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <p class="text-xs text-slate-500">Status Database: <span id="firebaseModalStatusText" class="font-semibold text-emerald-600">Tersambung (Environment Mode)</span></p>
+
+            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-[11px] font-mono text-slate-700 space-y-1 overflow-x-auto">
+                <div class="text-slate-400 font-sans font-semibold mb-1">Koleksi Firestore Aktif:</div>
+                <div>Telemetri: <span class="text-emerald-600 font-bold">/artifacts/{appId}/public/data/telemetry</span></div>
+                <div>Riwayat Log: <span class="text-emerald-600 font-bold">/artifacts/{appId}/public/data/history</span></div>
+            </div>
+
+            <button onclick="window.closeFirebaseModal()" class="w-full bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold py-2.5 rounded-xl transition-all">
+                Tutup Window
+            </button>
+        </div>
+    </div>
+
+    <!-- CUSTOM TOAST NOTIFICATION -->
+    <div id="toastNotification" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+        <div class="bg-slate-900 text-white text-xs font-semibold px-4 py-3 rounded-xl shadow-2xl border border-slate-800 flex items-center space-x-2">
+            <i id="toastIcon" class="fa-solid fa-circle-info text-emerald-400"></i>
+            <span id="toastMessage">Pesan Notifikasi</span>
+        </div>
+    </div>
+
+
+    <!-- SMART RESIDUAL BIN V3 JAVASCRIPT -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import {
+            getAuth,
+            signInAnonymously,
+            signInWithCustomToken,
+            signInWithEmailAndPassword,
+            onAuthStateChanged,
+            signOut
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import {
+            getFirestore,
+            doc,
+            getDoc,
+            setDoc,
+            addDoc,
+            deleteDoc,
+            collection,
+            query,
+            orderBy,
+            limit,
+            onSnapshot,
+            serverTimestamp
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'smart-bin-dashboard';
+        const firebaseConfig = typeof __firebase_config !== 'undefined'
+            ? JSON.parse(__firebase_config)
+            : {
+                apiKey: "demo-api-key",
+                authDomain: "demo-project.firebaseapp.com",
+                projectId: "demo-project",
+                storageBucket: "demo-project.appspot.com",
+                messagingSenderId: "1234567890",
+                appId: "1:1234567890:web:123456"
+            };
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let firebaseApp = null;
+        let db = null;
+        let auth = null;
+        let unsubscribeTelemetry = null;
+        let unsubscribeHistory = null;
+        let unsubscribeDevices = null;
+        let distributionChartInstance = null;
+        let trendChartInstance = null;
+        let currentUser = null;
+        let historyQueryReady = false;
+
+        const DEFAULT_DEVICE = 'FMIPA-01';
+        const DEVICE_IDS = ['FMIPA-01', 'FMIPA-02', 'FMIPA-03'];
+
+        window.appData = {
+            selectedDeviceId: DEFAULT_DEVICE,
+            threshold: 85,
+            isSimulating: false,
+            mode: 'firebase',
+            simInterval: null,
+            serialPort: null,
+            serialReader: null,
+            serialConnected: false,
+            firebaseConnected: false,
+            devices: {},
+            historyLog: [],
+            chartRange: 'mingguan',
+            serialLastWeights: {},
+            serialLastLoggedWeights: {}
+        };
+
+        // Seed local state so the original visual design never appears empty while Firebase initializes.
+        for (const id of DEVICE_IDS) {
+            window.appData.devices[id] = {
+                deviceId: id,
+                name: `Smart Bin ${id}`,
+                location: 'Gedung FMIPA',
+                weight: { organik: 0, anorganik: 0, residual: 0 },
+                capacity: { organik: 0, anorganik: 0, residual: 0 },
+                online: false,
+                lastUpdated: 0
+            };
+        }
+        window.appData.devices[DEFAULT_DEVICE].weight = { organik: 0, anorganik: 0, residual: 0 };
+        window.appData.devices[DEFAULT_DEVICE].capacity = { organik: 0, anorganik: 0, residual: 0 };
+
+        function currentDevice() {
+            return window.appData.devices[window.appData.selectedDeviceId] || window.appData.devices[DEFAULT_DEVICE];
+        }
+
+        function clampNumber(value, min, max, fallback = min) {
+            const n = Number(value);
+            return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fallback;
+        }
+
+        function normalizeTelemetry(raw, deviceId = DEFAULT_DEVICE) {
+            const w = raw?.weight || {};
+            const c = raw?.capacity || {};
+            return {
+                deviceId: raw?.deviceId || deviceId,
+                name: raw?.name || `Smart Bin ${deviceId}`,
+                location: raw?.location || 'Gedung FMIPA',
+                weight: {
+                    organik: clampNumber(w.organik ?? raw?.org, 0, 100000, 0),
+                    anorganik: clampNumber(w.anorganik ?? raw?.anorg, 0, 100000, 0),
+                    residual: clampNumber(w.residual ?? raw?.res, 0, 100000, 0)
+                },
+                capacity: {
+                    organik: clampNumber(c.organik ?? raw?.c_org, 0, 100, 0),
+                    anorganik: clampNumber(c.anorganik ?? raw?.c_anorg, 0, 100, 0),
+                    residual: clampNumber(c.residual ?? raw?.c_res, 0, 100, 0)
+                },
+                online: raw?.online !== false,
+                firmware: raw?.firmware || '2.4',
+                rssi: raw?.rssi ?? null,
+                lastUpdated: raw?.lastUpdated || raw?.timestamp || Date.now()
+            };
+        }
+
+        function deviceTelemetryRef(deviceId) {
+            return doc(db, 'artifacts', appId, 'public', 'data', 'telemetry', deviceId);
+        }
+
+        function deviceMetaRef(deviceId) {
+            return doc(db, 'artifacts', appId, 'public', 'data', 'devices', deviceId);
+        }
+
+        async function saveDeviceTelemetry(deviceId, telemetry) {
+            if (!db || !currentUser) return;
+            const normalized = normalizeTelemetry(telemetry, deviceId);
+            await setDoc(deviceTelemetryRef(deviceId), {
+                ...normalized,
+                lastUpdated: Date.now(),
+                updatedAt: serverTimestamp()
+            }, { merge: true });
+            await setDoc(deviceMetaRef(deviceId), {
+                deviceId,
+                name: normalized.name,
+                location: normalized.location,
+                online: normalized.online,
+                firmware: normalized.firmware,
+                rssi: normalized.rssi,
+                lastSeen: Date.now(),
+                updatedAt: serverTimestamp()
+            }, { merge: true });
+        }
+
+        async function pushHistoryLogToFirestore({
+            deviceId,
+            type,
+            weight,
+            source = 'ESP32',
+            capacityBefore = null,
+            capacityAfter = null,
+            status = 'Dipilah via System'
+        }) {
+            if (!currentUser || !db || window.appData.mode !== 'firebase') return;
+            const historyColRef = collection(db, 'artifacts', appId, 'public', 'data', 'history');
+            const now = new Date();
+            await addDoc(historyColRef, {
+                deviceId,
+                type,
+                weight: Number(weight) || 0,
+                source,
+                capacityBefore: capacityBefore == null ? null : Number(capacityBefore),
+                capacityAfter: capacityAfter == null ? null : Number(capacityAfter),
+                status,
+                timestamp: Date.now(),
+                createdAt: serverTimestamp(),
+                time: now.toLocaleString('id-ID', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                })
+            });
+        }
+
+        function applyDeviceTelemetry(deviceId, telemetry, {render = true} = {}) {
+            const normalized = normalizeTelemetry(telemetry, deviceId);
+            const previous = window.appData.devices[deviceId] || {};
+            window.appData.devices[deviceId] = normalized;
+
+            // Preserve the selected device in the original dashboard cards.
+            if (deviceId === window.appData.selectedDeviceId) {
+                window.appData.weight = normalized.weight;
+                window.appData.capacity = normalized.capacity;
+                if (render) {
+                    renderDashboard();
+                    updateChartsData();
+                }
+            }
+
+            updateDeviceSelector();
+            updateMapLabels();
+        }
+
+        async function processIncomingTelemetry(payload, source = 'ESP32') {
+            const deviceId = String(payload.deviceId || payload.device || window.appData.selectedDeviceId || DEFAULT_DEVICE);
+            if (!window.appData.devices[deviceId]) {
+                window.appData.devices[deviceId] = normalizeTelemetry({}, deviceId);
+            }
+
+            const before = window.appData.devices[deviceId];
+            const next = normalizeTelemetry(payload, deviceId);
+            applyDeviceTelemetry(deviceId, next);
+
+            // Realtime history: only create an event when cumulative weight increases.
+            const beforeW = before?.weight || { organik: 0, anorganik: 0, residual: 0 };
+            const afterW = next.weight;
+            const beforeC = before?.capacity || { organik: 0, anorganik: 0, residual: 0 };
+            const afterC = next.capacity;
+
+            const categoryMap = [
+                ['org', 'Organik', 'organik'],
+                ['anorg', 'Anorganik', 'anorganik'],
+                ['res', 'Residual', 'residual']
+            ];
+
+            for (const [, label, key] of categoryMap) {
+                const delta = afterW[key] - Number(beforeW[key] || 0);
+                const lastLogged = Number(window.appData.serialLastLoggedWeights[`${deviceId}:${key}`] ?? beforeW[key] ?? 0);
+
+                // 0.1 kg is used as a practical event threshold to reduce load-cell noise.
+                if (source === 'ESP32' && delta >= 0.1 && afterW[key] - lastLogged >= 0.1) {
+                    window.appData.serialLastLoggedWeights[`${deviceId}:${key}`] = afterW[key];
+                    try {
+                        await pushHistoryLogToFirestore({
+                            deviceId,
+                            type: label,
+                            weight: Number((afterW[key] - lastLogged).toFixed(2)),
+                            source,
+                            capacityBefore: beforeC[key],
+                            capacityAfter: afterC[key]
+                        });
+                    } catch (e) {
+                        console.error('History write error:', e);
+                    }
+                }
+            }
+
+            // ONLY real ESP32/Arduino telemetry may be persisted to Firebase.
+            // Simulation is intentionally never written to Firebase. Demo mode uses local-only storage.
+            if (source !== 'ESP32' || !window.appData.serialConnected || window.appData.mode !== 'firebase') {
+                return;
+            }
+            try {
+                await saveDeviceTelemetry(deviceId, next);
+            } catch (e) {
+                console.error('Telemetry write error:', e);
+                logSerialConsole(`[FIREBASE ERROR] ${e.message}`);
+            }
+        }
+
+        function setFirebaseConnected(connected, text = 'Offline') {
+            window.appData.firebaseConnected = connected;
+            updateFirebaseStatusUI(connected, text);
+            const status = document.getElementById('loginConnectionStatus');
+            if (status) {
+                status.textContent = connected ? 'Firebase siap digunakan.' : `Firebase: ${text}`;
+                status.className = connected
+                    ? 'text-[11px] text-center text-emerald-600 mt-2 font-medium'
+                    : 'text-[11px] text-center text-amber-600 mt-2';
+            }
+        }
+
+        function updateFirebaseStatusUI(connected, text) {
+            const badge = document.getElementById('firebaseStatusBadge');
+            const txt = document.getElementById('firebaseStatusText');
+            const txtShort = document.getElementById('firebaseStatusTextShort');
+            if (!badge) return;
+            if (connected) {
+                badge.className = 'flex items-center space-x-1.5 px-2.5 py-1.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200 hover:bg-emerald-200 transition-colors cursor-pointer';
+                txt.innerText = 'Firebase: Online';
+                txtShort.innerText = 'DB Live';
+            } else {
+                badge.className = 'flex items-center space-x-1.5 px-2.5 py-1.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-colors cursor-pointer';
+                txt.innerText = `Firebase: ${text}`;
+                txtShort.innerText = 'DB Err';
+            }
+        }
+
+        function updateSerialStatusUI(connected, text) {
+            const badge = document.getElementById('serialStatusBadge');
+            const dot = document.getElementById('serialDot');
+            const txt = document.getElementById('serialStatusText');
+            const btn = document.getElementById('connectSerialBtn');
+            if (!badge || !btn) return;
+
+            if (connected) {
+                badge.className = 'hidden md:flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200';
+                dot.className = 'w-2 h-2 rounded-full bg-emerald-500 animate-pulse';
+                txt.innerText = text;
+                btn.className = 'bg-slate-700 hover:bg-slate-800 text-white text-xs font-semibold px-3.5 py-2 rounded-xl transition-all shadow-sm';
+                btn.innerHTML = `<i class="fa-solid fa-plug-circle-xmark text-amber-300 mr-1.5"></i><span class="hidden sm:inline">Putuskan</span><span class="sm:hidden">Putus</span>`;
+            } else {
+                badge.className = 'hidden md:flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200';
+                dot.className = 'w-2 h-2 rounded-full bg-slate-400';
+                txt.innerText = text || 'Disconnected';
+                btn.className = 'bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3.5 py-2 rounded-xl transition-all shadow-sm hover:shadow flex items-center space-x-2';
+                btn.innerHTML = `<i class="fa-solid fa-plug text-sm"></i><span class="hidden sm:inline">Hubungkan Arduino/ESP32</span><span class="sm:hidden">Hubungkan</span>`;
+            }
+        }
+
+        function showToast(msg, type = 'info') {
+            const toast = document.getElementById('toastNotification');
+            const toastMsg = document.getElementById('toastMessage');
+            const toastIcon = document.getElementById('toastIcon');
+            if (!toast || !toastMsg) return;
+            toastMsg.innerText = msg;
+            toastIcon.className = type === 'error'
+                ? 'fa-solid fa-circle-exclamation text-red-400'
+                : type === 'success'
+                    ? 'fa-solid fa-circle-check text-emerald-400'
+                    : 'fa-solid fa-circle-info text-emerald-400';
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 3000);
+        }
+
+        function logSerialConsole(msg) {
+            const consoleBox = document.getElementById('serialConsole');
+            if (!consoleBox) return;
+            const row = document.createElement('div');
+            const time = document.createElement('span');
+            time.className = 'text-slate-500';
+            time.textContent = `[${new Date().toLocaleTimeString('id-ID')}]`;
+            row.appendChild(time);
+            row.appendChild(document.createTextNode(` ${msg}`));
+            consoleBox.appendChild(row);
+            consoleBox.scrollTop = consoleBox.scrollHeight;
+        }
+
+        function renderDashboard() {
+            const device = currentDevice();
+            const w = device.weight;
+            const c = device.capacity;
+
+            const setText = (id, value) => {
+                const el = document.getElementById(id);
+                if (el) el.innerText = value;
+            };
+            const setWidth = (id, value) => {
+                const el = document.getElementById(id);
+                if (el) el.style.width = `${clampNumber(value, 0, 100, 0)}%`;
+            };
+
+            setText('val-weight-organik', Number(w.organik).toFixed(1));
+            setText('val-weight-anorganik', Number(w.anorganik).toFixed(1));
+            setText('val-weight-residual', Number(w.residual).toFixed(1));
+
+            const total = Number(w.organik) + Number(w.anorganik) + Number(w.residual);
+            setText('total-weight-today', `${total.toFixed(1)} kg`);
+
+            const safeTotal = total || 1;
+            setText('org-pct-badge', `${Math.round((w.organik / safeTotal) * 100)}%`);
+            setText('anorg-pct-badge', `${Math.round((w.anorganik / safeTotal) * 100)}%`);
+            setText('res-pct-badge', `${Math.round((w.residual / safeTotal) * 100)}%`);
+
+            setText('cap-organik-val', `${Math.round(c.organik)}%`);
+            setWidth('cap-organik-bar', c.organik);
+            setText('cap-anorganik-val', `${Math.round(c.anorganik)}%`);
+            setWidth('cap-anorganik-bar', c.anorganik);
+            setText('cap-residual-val', `${Math.round(c.residual)}%`);
+            setWidth('cap-residual-bar', c.residual);
+
+            const maxCapacity = Math.max(c.organik, c.anorganik, c.residual);
+            const isFull = maxCapacity >= Number(window.appData.threshold || 85);
+            const statusText = document.getElementById('status-penuh-text');
+            const statusIconBg = document.getElementById('status-penuh-icon-bg');
+            const statusIcon = document.getElementById('status-penuh-icon');
+
+            if (isFull) {
+                statusText.innerText = `Peringatan ≥ ${window.appData.threshold}%`;
+                statusText.className = 'text-sm font-bold text-red-600 animate-pulse';
+                statusIconBg.className = 'w-9 h-9 rounded-lg bg-red-100 text-red-600 flex items-center justify-center';
+                statusIcon.className = 'fa-solid fa-triangle-exclamation';
+            } else {
+                statusText.innerText = 'Tidak ada';
+                statusText.className = 'text-sm font-bold text-emerald-600';
+                statusIconBg.className = 'w-9 h-9 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center';
+                statusIcon.className = 'fa-solid fa-circle-check';
+            }
+
+            const mapLabel = document.getElementById('map-bin-1-label');
+            if (mapLabel && window.appData.selectedDeviceId === 'FMIPA-01') {
+                mapLabel.innerText = `Bin FMIPA-01 (${Math.round(maxCapacity)}%)`;
+            }
+        }
+
+        function updateMapLabels() {
+            const mapping = [
+                ['FMIPA-01', 'map-bin-1-label'],
+                ['FMIPA-02', 'map-bin-2-label'],
+                ['FMIPA-03', 'map-bin-3-label']
+            ];
+            mapping.forEach(([id, labelId]) => {
+                const el = document.getElementById(labelId);
+                const d = window.appData.devices[id];
+                if (!el || !d) return;
+                const maxC = Math.max(d.capacity.organik, d.capacity.anorganik, d.capacity.residual);
+                el.innerText = `Bin ${id} (${Math.round(maxC)}%)`;
+            });
+        }
+
+        function updateDeviceSelector() {
+            const select = document.getElementById('deviceSelector');
+            if (!select) return;
+            const ids = Object.keys(window.appData.devices).sort();
+            const current = window.appData.selectedDeviceId;
+            select.innerHTML = '';
+            ids.forEach(id => {
+                const d = window.appData.devices[id];
+                const opt = document.createElement('option');
+                opt.value = id;
+                opt.textContent = `${id} • ${Math.round(Math.max(d.capacity.organik, d.capacity.anorganik, d.capacity.residual))}%`;
+                select.appendChild(opt);
+            });
+            select.value = current;
+        }
+
+        function renderTables() {
+            const logs = window.appData.historyLog || [];
+            const quickTable = document.getElementById('quickHistoryTable');
+            if (!quickTable) return;
+            quickTable.innerHTML = '';
+
+            if (!logs.length) {
+                quickTable.innerHTML = `<tr><td colspan="4" class="py-4 text-center text-xs text-slate-400">Belum ada riwayat.</td></tr>`;
+            } else {
+                logs.slice(0, 4).forEach(item => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'hover:bg-slate-50/80 transition-colors';
+                    const badgeClass = item.type === 'Organik'
+                        ? 'bg-emerald-100 text-emerald-800'
+                        : item.type === 'Anorganik'
+                            ? 'bg-blue-100 text-blue-800'
+                            : 'bg-slate-200 text-slate-800';
+
+                    const values = [
+                        item.time || formatTimestamp(item.timestamp),
+                        item.type || '-',
+                        `${Number(item.weight || 0).toFixed(2)} kg`,
+                        item.status || 'Dipilah'
+                    ];
+                    values.forEach((value, index) => {
+                        const td = document.createElement('td');
+                        td.className = 'py-3 px-4 text-xs';
+                        if (index === 0) td.className += ' font-medium text-slate-500';
+                        if (index === 1) {
+                            td.innerHTML = `<span class="px-2.5 py-1 text-[11px] font-bold rounded-md ${badgeClass}"></span>`;
+                            td.querySelector('span').textContent = value;
+                        } else {
+                            td.textContent = value;
+                            if (index === 2) td.className += ' font-semibold text-slate-800';
+                            if (index === 3) td.className += ' text-emerald-600 font-semibold';
+                        }
+                        tr.appendChild(td);
+                    });
+                    quickTable.appendChild(tr);
+                });
+            }
+            filterHistoryTable();
+        }
+
+        function formatTimestamp(ts) {
+            if (!ts) return '-';
+            const date = new Date(typeof ts === 'number' ? ts : Date.now());
+            return date.toLocaleString('id-ID', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function filterHistoryTable() {
+            const catFilter = document.getElementById('historyFilterCategory')?.value || 'ALL';
+            const searchQuery = (document.getElementById('historySearchInput')?.value || '').toLowerCase();
+            const fullTable = document.getElementById('fullHistoryTable');
+            if (!fullTable) return;
+
+            const selectedDevice = window.appData.selectedDeviceId;
+            const logs = (window.appData.historyLog || []).filter(item =>
+                !selectedDevice || item.deviceId === selectedDevice || !item.deviceId
+            );
+
+            const filtered = logs.filter(item => {
+                const matchesCat = catFilter === 'ALL' || item.type === catFilter;
+                const haystack = `${item.time || ''} ${item.type || ''} ${item.weight || ''} ${item.deviceId || ''} ${item.source || ''}`.toLowerCase();
+                return matchesCat && haystack.includes(searchQuery);
+            });
+
+            fullTable.innerHTML = '';
+            if (!filtered.length) {
+                fullTable.innerHTML = `<tr><td colspan="6" class="py-6 text-center text-xs text-slate-400">Tidak ada log ditemukan.</td></tr>`;
+                return;
+            }
+
+            filtered.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50/80 transition-colors';
+                const badgeClass = item.type === 'Organik'
+                    ? 'bg-emerald-100 text-emerald-800'
+                    : item.type === 'Anorganik'
+                        ? 'bg-blue-100 text-blue-800'
+                        : 'bg-slate-200 text-slate-800';
+
+                const cells = [
+                    item.time || formatTimestamp(item.timestamp),
+                    item.type || '-',
+                    `${Number(item.weight || 0).toFixed(2)} kg`,
+                    item.capacityBefore != null && item.capacityAfter != null
+                        ? `${Number(item.capacityBefore).toFixed(0)}% → ${Number(item.capacityAfter).toFixed(0)}%`
+                        : '—',
+                    `${item.status || 'Dipilah'} • ${item.source || 'SYSTEM'}`,
+                ];
+
+                cells.forEach((value, index) => {
+                    const td = document.createElement('td');
+                    td.className = 'py-3 px-4 text-xs';
+                    if (index === 0) td.className += ' font-medium text-slate-500';
+                    if (index === 1) {
+                        td.innerHTML = `<span class="px-2.5 py-1 text-[11px] font-bold rounded-md ${badgeClass}"></span>`;
+                        td.querySelector('span').textContent = value;
+                    } else {
+                        td.textContent = value;
+                        if (index === 2) td.className += ' font-semibold text-slate-800';
+                        if (index === 4) td.className += ' text-emerald-600 font-semibold';
+                    }
+                    tr.appendChild(td);
+                });
+
+                const actionTd = document.createElement('td');
+                actionTd.className = 'py-3 px-4 text-center';
+                if (item.id) {
+                    const btn = document.createElement('button');
+                    btn.className = 'text-red-500 hover:text-red-700 text-xs px-2 py-1 rounded-md hover:bg-red-50';
+                    btn.innerHTML = '<i class="fa-solid fa-trash-can"></i>';
+                    btn.title = 'Hapus log';
+                    btn.onclick = () => window.deleteHistoryItem(item.id);
+                    actionTd.appendChild(btn);
+                } else {
+                    actionTd.textContent = '-';
+                }
+                tr.appendChild(actionTd);
+                fullTable.appendChild(tr);
+            });
+        }
+
+        function initCharts() {
+            const ctx1 = document.getElementById('distributionChart')?.getContext('2d');
+            const ctx2 = document.getElementById('trendChart')?.getContext('2d');
+            if (!ctx1 || !ctx2) return;
+
+            distributionChartInstance = new Chart(ctx1, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Organik', 'Anorganik', 'Residual'],
+                    datasets: [{
+                        data: [12.5, 8.2, 7.3],
+                        backgroundColor: ['#10B981', '#3B82F6', '#475569'],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { font: { family: 'Inter', size: 11 } } }
+                    },
+                    cutout: '70%'
+                }
+            });
+
+            trendChartInstance = new Chart(ctx2, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        { label: 'Organik', data: [], borderColor: '#10B981', backgroundColor: 'rgba(16,185,129,.1)', fill: true, tension: .3 },
+                        { label: 'Anorganik', data: [], borderColor: '#3B82F6', backgroundColor: 'rgba(59,130,246,.1)', fill: true, tension: .3 },
+                        { label: 'Residual', data: [], borderColor: '#475569', backgroundColor: 'rgba(71,85,105,.1)', fill: true, tension: .3 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: { legend: { position: 'top', labels: { font: { family: 'Inter', size: 11 } } } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        function historyForDevice() {
+            const id = window.appData.selectedDeviceId;
+            return (window.appData.historyLog || []).filter(x => !x.deviceId || x.deviceId === id);
+        }
+
+        function aggregateHistory(range) {
+            const logs = historyForDevice();
+            const now = new Date();
+            const totals = { Organik: 0, Anorganik: 0, Residual: 0 };
+            const labels = [];
+            const series = { Organik: [], Anorganik: [], Residual: [] };
+
+            if (range === 'harian') {
+                // Last 8 two-hour buckets, based on real history timestamps.
+                for (let i = 7; i >= 0; i--) {
+                    const end = new Date(now.getTime() - i * 2 * 60 * 60 * 1000);
+                    const start = new Date(end.getTime() - 2 * 60 * 60 * 1000);
+                    labels.push(end.toLocaleTimeString('id-ID', {hour: '2-digit', minute: '2-digit'}));
+                    ['Organik', 'Anorganik', 'Residual'].forEach(type => {
+                        series[type].push(
+                            logs.filter(x => x.type === type && Number(x.timestamp || 0) >= start.getTime() && Number(x.timestamp || 0) < end.getTime())
+                                .reduce((sum, x) => sum + Number(x.weight || 0), 0)
+                        );
+                    });
+                }
+            } else if (range === 'mingguan') {
+                for (let i = 6; i >= 0; i--) {
+                    const d = new Date(now);
+                    d.setHours(0, 0, 0, 0);
+                    d.setDate(d.getDate() - i);
+                    const next = new Date(d);
+                    next.setDate(next.getDate() + 1);
+                    labels.push(d.toLocaleDateString('id-ID', {weekday: 'short'}));
+                    ['Organik', 'Anorganik', 'Residual'].forEach(type => {
+                        series[type].push(
+                            logs.filter(x => x.type === type && Number(x.timestamp || 0) >= d.getTime() && Number(x.timestamp || 0) < next.getTime())
+                                .reduce((sum, x) => sum + Number(x.weight || 0), 0)
+                        );
+                    });
+                }
+            } else {
+                // Last 4 calendar weeks.
+                for (let i = 3; i >= 0; i--) {
+                    const end = new Date(now);
+                    end.setHours(0, 0, 0, 0);
+                    end.setDate(end.getDate() - i * 7);
+                    const start = new Date(end);
+                    start.setDate(start.getDate() - 7);
+                    labels.push(`Minggu ${4 - i}`);
+                    ['Organik', 'Anorganik', 'Residual'].forEach(type => {
+                        series[type].push(
+                            logs.filter(x => x.type === type && Number(x.timestamp || 0) >= start.getTime() && Number(x.timestamp || 0) < end.getTime())
+                                .reduce((sum, x) => sum + Number(x.weight || 0), 0)
+                        );
+                    });
+                }
+            }
+
+            ['Organik', 'Anorganik', 'Residual'].forEach(type => {
+                totals[type] = logs.reduce((sum, x) => sum + (x.type === type ? Number(x.weight || 0) : 0), 0);
+            });
+
+            return { labels, series, totals };
+        }
+
+        function updateChartsData() {
+            const d = currentDevice();
+            if (distributionChartInstance) {
+                distributionChartInstance.data.datasets[0].data = [d.weight.organik, d.weight.anorganik, d.weight.residual];
+                distributionChartInstance.update('none');
+            }
+
+            const totalToday = historyForDevice().filter(x => {
+                const ts = Number(x.timestamp || 0);
+                const now = new Date();
+                const start = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+                return ts >= start;
+            }).reduce((sum, x) => sum + Number(x.weight || 0), 0);
+
+            const logs = historyForDevice();
+            const last7Start = Date.now() - 7 * 24 * 60 * 60 * 1000;
+            const last7 = logs.filter(x => Number(x.timestamp || 0) >= last7Start);
+            const daysWithData = new Set(last7.map(x => new Date(Number(x.timestamp)).toISOString().slice(0,10))).size;
+            const avg = daysWithData ? last7.reduce((sum, x) => sum + Number(x.weight || 0), 0) / daysWithData : 0;
+
+            const all = d.weight.organik + d.weight.anorganik + d.weight.residual;
+            const recycled = d.weight.organik + d.weight.anorganik;
+
+            const volEl = document.getElementById('kpi-total-vol');
+            const avgEl = document.getElementById('kpi-avg-day');
+            const ratioEl = document.getElementById('kpi-recycling-ratio');
+            if (volEl) volEl.innerText = `${totalToday.toFixed(1)} kg`;
+            if (avgEl) avgEl.innerText = `${avg.toFixed(1)} kg`;
+            if (ratioEl) ratioEl.innerText = `${all ? Math.round((recycled / all) * 100) : 0}%`;
+
+            const aggregate = aggregateHistory(window.appData.chartRange);
+            if (trendChartInstance) {
+                trendChartInstance.data.labels = aggregate.labels;
+                trendChartInstance.data.datasets[0].data = aggregate.series.Organik;
+                trendChartInstance.data.datasets[1].data = aggregate.series.Anorganik;
+                trendChartInstance.data.datasets[2].data = aggregate.series.Residual;
+                trendChartInstance.update('none');
+            }
+        }
+
+        window.updateChartRange = function(range) {
+            window.appData.chartRange = range;
+            document.querySelectorAll('.range-btn').forEach(b => {
+                b.classList.remove('bg-white', 'text-slate-800', 'shadow-sm');
+                b.classList.add('text-slate-500');
+            });
+            const active = document.getElementById(`btn-range-${range}`);
+            if (active) {
+                active.classList.remove('text-slate-500');
+                active.classList.add('bg-white', 'text-slate-800', 'shadow-sm');
+            }
+            updateChartsData();
+        };
+
+        window.exportHistoryCSV = function() {
+            const logs = historyForDevice();
+            const header = ['Waktu','Device','Jenis Sampah','Berat (kg)','Kapasitas Sebelum','Kapasitas Sesudah','Sumber','Status'];
+            const escapeCsv = v => `"${String(v ?? '').replaceAll('"', '""')}"`;
+            const rows = logs.map(row => [
+                row.time || formatTimestamp(row.timestamp),
+                row.deviceId || '',
+                row.type || '',
+                Number(row.weight || 0).toFixed(2),
+                row.capacityBefore ?? '',
+                row.capacityAfter ?? '',
+                row.source || '',
+                row.status || ''
+            ]);
+            const csv = [header, ...rows].map(r => r.map(escapeCsv).join(',')).join('\n');
+            const blob = new Blob(["\ufeff" + csv], {type: 'text/csv;charset=utf-8'});
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `smart-bin-${window.appData.selectedDeviceId}-history-${Date.now()}.csv`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(url);
+            showToast('CSV berhasil diekspor.', 'success');
+        };
+
+        window.deleteHistoryItem = async function(docId) {
+            if (!currentUser || !db || !docId) return;
+            try {
+                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'history', docId));
+                showToast('Log berhasil dihapus.', 'success');
+            } catch (e) {
+                console.error(e);
+                showToast('Gagal menghapus log. Periksa Firestore Rules.', 'error');
+            }
+        };
+
+        window.submitManualLog = async function(event) {
+            event.preventDefault();
+            const type = document.getElementById('manualType').value;
+            const weight = Number(document.getElementById('manualWeight').value);
+            if (!Number.isFinite(weight) || weight <= 0) {
+                showToast('Berat harus lebih dari 0 kg.', 'error');
+                return;
+            }
+
+            // Manual entry is local-only in Demo mode. In real/Firebase mode,
+            // historical data must come from the physical Arduino/ESP32 only.
+            if (window.appData.mode !== 'demo') {
+                showToast('Mode nyata hanya menyimpan data dari Arduino/ESP32. Input manual tidak disimpan.', 'error');
+                return;
+            }
+
+            const d = currentDevice();
+            const key = type === 'Organik' ? 'organik' : type === 'Anorganik' ? 'anorganik' : 'residual';
+            const beforeCapacity = d.capacity[key];
+            d.weight[key] += weight;
+            d.capacity[key] = Math.min(100, d.capacity[key] + 2);
+            d.online = false;
+            applyDeviceTelemetry(window.appData.selectedDeviceId, d);
+            addDemoHistory({
+                deviceId: window.appData.selectedDeviceId,
+                type, weight, source: 'MANUAL',
+                capacityBefore: beforeCapacity, capacityAfter: d.capacity[key],
+                status: 'Input Manual'
+            });
+            saveDemoState();
+            window.closeAddLogModal();
+            showToast(`Log demo ${type} (${weight.toFixed(1)} kg) tersimpan lokal.`, 'success');
+        };
+
+        window.toggleSimulation = function() {
+            // Simulation is NEVER persisted to Firebase.
+            window.appData.isSimulating = Boolean(document.getElementById('simToggle')?.checked);
+            logSerialConsole(`Simulasi Data Live: ${window.appData.isSimulating ? 'AKTIF' : 'NON-AKTIF'}${window.appData.mode === 'demo' ? ' (LOCAL)' : ' (TIDAK DISIMPAN KE FIREBASE)'}`);
+            if (window.appData.isSimulating) startSimulation();
+            else if (window.appData.simInterval) {
+                clearInterval(window.appData.simInterval);
+                window.appData.simInterval = null;
+            }
+        };
+
+        function addDemoHistory(item) {
+            if (window.appData.mode !== 'demo') return;
+            window.appData.historyLog = [
+                { id: `local-${Date.now()}-${Math.random().toString(36).slice(2,7)}`, timestamp: Date.now(), time: new Date().toLocaleString('id-ID', {day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}), ...item },
+                ...(window.appData.historyLog || [])
+            ].slice(0, 500);
+            renderTables();
+            updateChartsData();
+        }
+
+        function saveDemoState() {
+            if (window.appData.mode !== 'demo') return;
+            const payload = {
+                devices: window.appData.devices,
+                historyLog: window.appData.historyLog,
+                selectedDeviceId: window.appData.selectedDeviceId
+            };
+            localStorage.setItem('smartResidualBinV3DemoData', JSON.stringify(payload));
+        }
+
+        function loadDemoState() {
+            try {
+                const raw = localStorage.getItem('smartResidualBinV3DemoData');
+                if (raw) {
+                    const data = JSON.parse(raw);
+                    if (data.devices) window.appData.devices = data.devices;
+                    if (Array.isArray(data.historyLog)) window.appData.historyLog = data.historyLog;
+                    if (data.selectedDeviceId && window.appData.devices[data.selectedDeviceId]) window.appData.selectedDeviceId = data.selectedDeviceId;
+                } else {
+                    window.appData.devices[DEFAULT_DEVICE].weight = { organik: 12.5, anorganik: 8.2, residual: 7.3 };
+                    window.appData.devices[DEFAULT_DEVICE].capacity = { organik: 60, anorganik: 40, residual: 30 };
+                }
+            } catch (e) {
+                console.warn('Demo local data gagal dimuat:', e);
+            }
+        }
+
+        function startSimulation() {
+            if (window.appData.simInterval) clearInterval(window.appData.simInterval);
+            window.appData.simInterval = setInterval(() => {
+                if (!window.appData.isSimulating || window.appData.serialConnected) return;
+
+                const types = [
+                    ['Organik', 'organik'],
+                    ['Anorganik', 'anorganik'],
+                    ['Residual', 'residual']
+                ];
+                const [label, key] = types[Math.floor(Math.random() * types.length)];
+                const d = currentDevice();
+                const beforeCapacity = Number(d.capacity[key] || 0);
+                const addedWeight = Number((Math.random() * 0.4 + 0.1).toFixed(1));
+
+                d.weight[key] = Number(d.weight[key] || 0) + addedWeight;
+                d.capacity[key] = Math.min(100, beforeCapacity + 2);
+                d.online = false;
+                applyDeviceTelemetry(window.appData.selectedDeviceId, d);
+                logSerialConsole(`[SIMULASI] ${window.appData.selectedDeviceId}: ${label} +${addedWeight.toFixed(1)} kg — TIDAK disimpan ke Firebase`);
+
+                if (window.appData.mode === 'demo') {
+                    addDemoHistory({
+                        deviceId: window.appData.selectedDeviceId, type: label, weight: addedWeight,
+                        source: 'SIMULATION', capacityBefore: beforeCapacity, capacityAfter: d.capacity[key],
+                        status: 'Simulasi Lokal'
+                    });
+                    saveDemoState();
+                }
+            }, 7000);
+        }
+
+        async function disconnectSerial() {
+            try {
+                if (window.appData.serialReader) {
+                    await window.appData.serialReader.cancel();
+                    window.appData.serialReader.releaseLock();
+                }
+            } catch (_) {}
+            try {
+                if (window.appData.serialPort) await window.appData.serialPort.close();
+            } catch (_) {}
+            window.appData.serialReader = null;
+            window.appData.serialPort = null;
+            window.appData.serialConnected = false;
+            updateSerialStatusUI(false, 'Disconnected');
+            logSerialConsole('[SERIAL] Port ditutup.');
+            if (document.getElementById('simToggle')) {
+                document.getElementById('simToggle').checked = false;
+                window.appData.isSimulating = false;
+            }
+            if (window.appData.simInterval) {
+                clearInterval(window.appData.simInterval);
+                window.appData.simInterval = null;
+            }
+        }
+
+        window.connectArduinoSerial = async function() {
+            if (window.appData.serialConnected) {
+                await disconnectSerial();
+                return;
+            }
+
+            if (!('serial' in navigator)) {
+                logSerialConsole('[ERROR] Web Serial API tidak didukung. Gunakan Chrome/Edge desktop.');
+                showToast('Web Serial tidak tersedia di perangkat ini.', 'error');
+                return;
+            }
+
+            try {
+                const port = await navigator.serial.requestPort();
+                const baud = Number(document.getElementById('baudRateSelect')?.value || 115200);
+                await port.open({ baudRate: baud });
+                window.appData.serialPort = port;
+                window.appData.serialConnected = true;
+                window.appData.isSimulating = false;
+                const toggle = document.getElementById('simToggle');
+                if (toggle) toggle.checked = false;
+
+                updateSerialStatusUI(true, `COM Connected (${baud} bps)`);
+                logSerialConsole(`[SERIAL] Terhubung pada ${baud} baud.`);
+                readSerialStream();
+            } catch (err) {
+                logSerialConsole(`[ERROR Serial] ${err.message || 'Gagal koneksi serial.'}`);
+                showToast('Gagal menghubungkan ESP32.', 'error');
+            }
+        };
+
+        async function readSerialStream() {
+            const port = window.appData.serialPort;
+            if (!port?.readable) return;
+
+            const decoder = new TextDecoderStream();
+            const closed = port.readable.pipeTo(decoder.writable).catch(() => {});
+            window.appData.serialReader = decoder.readable.getReader();
+            let buffer = '';
+
+            try {
+                while (window.appData.serialConnected) {
+                    const {value, done} = await window.appData.serialReader.read();
+                    if (done) break;
+                    buffer += value;
+                    const lines = buffer.split(/\r?\n/);
+                    buffer = lines.pop() || '';
+                    for (const raw of lines) {
+                        const line = raw.trim();
+                        if (!line) continue;
+                        logSerialConsole(`[RX] ${line}`);
+                        await parseIncomingSerialData(line);
+                    }
+                }
+            } catch (error) {
+                logSerialConsole(`[ERROR Read] Serial terputus: ${error.message}`);
+            } finally {
+                if (window.appData.serialConnected) {
+                    window.appData.serialConnected = false;
+                    updateSerialStatusUI(false, 'Disconnected');
+                }
+            }
+        }
+
+        async function parseIncomingSerialData(dataString) {
+            let payload;
+            try {
+                if (!(dataString.startsWith('{') && dataString.endsWith('}'))) {
+                    logSerialConsole(`[SERIAL] Diabaikan (bukan JSON): ${dataString}`);
+                    return;
+                }
+                payload = JSON.parse(dataString);
+            } catch (e) {
+                logSerialConsole(`[ERROR JSON] ${e.message}`);
+                return;
+            }
+
+            // Accept both V2 payload and the original compact payload.
+            if (!payload.weight) {
+                payload.weight = {
+                    organik: payload.org,
+                    anorganik: payload.anorg,
+                    residual: payload.res
+                };
+            }
+            if (!payload.capacity) {
+                payload.capacity = {
+                    organik: payload.c_org,
+                    anorganik: payload.c_anorg,
+                    residual: payload.c_res
+                };
+            }
+
+            try {
+                await processIncomingTelemetry(payload, 'ESP32');
+                logSerialConsole(`[SERIAL] Telemetri ${payload.deviceId || window.appData.selectedDeviceId} diproses.`);
+            } catch (e) {
+                console.error(e);
+                logSerialConsole(`[ERROR Telemetry] ${e.message}`);
+            }
+        }
+
+        window.sendActuatorCommand = async function(cmd) {
+            if (window.appData.serialConnected && window.appData.serialPort?.writable) {
+                try {
+                    const writer = window.appData.serialPort.writable.getWriter();
+                    await writer.write(new TextEncoder().encode(cmd + '\n'));
+                    writer.releaseLock();
+                    logSerialConsole(`[TX] -> ${cmd}`);
+                    showToast(`Perintah ${cmd} dikirim.`, 'success');
+                } catch (e) {
+                    logSerialConsole(`[TX ERROR] ${e.message}`);
+                    showToast('Perintah gagal dikirim.', 'error');
+                }
+            } else {
+                logSerialConsole(`[SIMULASI TX] ${cmd} — tidak ada perangkat fisik yang dikendalikan.`);
+                showToast(`Mode simulasi: ${cmd}`, 'info');
+            }
+        };
+
+        window.clearSerialConsole = function() {
+            const box = document.getElementById('serialConsole');
+            if (box) box.innerHTML = '<p class="text-slate-500">[Console Dibersihkan]</p>';
+        };
+
+        window.openBinModal = function(binId) {
+            const modal = document.getElementById('binDetailModal');
+            const d = window.appData.devices[binId] || normalizeTelemetry({}, binId);
+            document.getElementById('modalBinTitle').innerText = `Detail Telemetri ${binId}`;
+            const sub = document.getElementById('modalBinSub');
+            if (sub) sub.innerText = `${d.location || 'Gedung FMIPA'} • ${d.online ? 'Online' : 'Offline/Simulasi'}`;
+
+            const vals = [
+                ['modalOrgVal', 'modalOrgBar', d.capacity.organik],
+                ['modalAnorgVal', 'modalAnorgBar', d.capacity.anorganik],
+                ['modalResVal', 'modalResBar', d.capacity.residual]
+            ];
+            vals.forEach(([valId, barId, value]) => {
+                document.getElementById(valId).innerText = `${Math.round(value)}%`;
+                document.getElementById(barId).style.width = `${clampNumber(value, 0, 100)}%`;
+            });
+
+            modal.classList.remove('hidden');
+        };
+
+        window.closeBinModal = function() {
+            document.getElementById('binDetailModal')?.classList.add('hidden');
+        };
+        window.openAddLogModal = function() {
+            document.getElementById('addLogModal')?.classList.remove('hidden');
+        };
+        window.closeAddLogModal = function() {
+            document.getElementById('addLogModal')?.classList.add('hidden');
+        };
+        window.openFirebaseModal = function() {
+            const modal = document.getElementById('firebaseConfigModal');
+            const status = document.getElementById('firebaseModalStatusText');
+            if (status) status.innerText = window.appData.firebaseConnected ? 'Tersambung' : 'Tidak tersambung';
+            modal?.classList.remove('hidden');
+        };
+        window.closeFirebaseModal = function() {
+            document.getElementById('firebaseConfigModal')?.classList.add('hidden');
+        };
+
+        window.logoutUser = async function() {
+            try {
+                localStorage.removeItem('smartResidualBinV3LoggedIn');
+                localStorage.removeItem('smartResidualBinV3User');
+                localStorage.removeItem('smartResidualBinV3Mode');
+                if (auth && window.appData?.firebaseAuthMode) await signOut(auth);
+            } catch (e) {
+                console.error(e);
+            } finally {
+                currentUser = null;
+                window.appData.firebaseConnected = false;
+                document.getElementById('loginScreen')?.classList.remove('hidden');
+                document.getElementById('logoutBtn')?.classList.add('hidden');
+                document.getElementById('loginEmail').value = '';
+                document.getElementById('loginPassword').value = '';
+            }
+        };
+
+        window.switchTab = function(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.nav-item').forEach(btn => {
+                btn.classList.remove('bg-emerald-600', 'text-white', 'shadow-lg', 'shadow-emerald-600/20');
+                btn.classList.add('text-slate-400');
+            });
+            document.getElementById(`tab-${tabId}`)?.classList.remove('hidden');
+            document.getElementById(`nav-${tabId}`)?.classList.remove('text-slate-400');
+            document.getElementById(`nav-${tabId}`)?.classList.add('bg-emerald-600', 'text-white', 'shadow-lg', 'shadow-emerald-600/20');
+
+            const titles = {
+                'beranda': 'Beranda Dashboard',
+                'data-sampah': 'Analitik Data Sampah',
+                'riwayat': 'Riwayat Log Pemilahan',
+                'lokasi': 'Lokasi Smart Bin FMIPA',
+                'pengaturan': 'Pengaturan Sistem & Serial'
+            };
+            const title = document.getElementById('pageTitle');
+            if (title) title.innerText = titles[tabId] || 'Dashboard';
+
+            if (window.innerWidth < 768) {
+                document.getElementById('sidebar')?.classList.add('-translate-x-full');
+            }
+            if (tabId === 'data-sampah') updateChartsData();
+            if (tabId === 'riwayat') filterHistoryTable();
+        };
+
+        async function subscribeRealtime() {
+            if (!db || !currentUser) return;
+
+            const telemetryCol = collection(db, 'artifacts', appId, 'public', 'data', 'telemetry');
+            const devicesCol = collection(db, 'artifacts', appId, 'public', 'data', 'devices');
+            const historyCol = collection(db, 'artifacts', appId, 'public', 'data', 'history');
+
+            unsubscribeTelemetry?.();
+            unsubscribeDevices?.();
+            unsubscribeHistory?.();
+
+            // Multi-device telemetry: one document per deviceId.
+            unsubscribeTelemetry = onSnapshot(telemetryCol, snapshot => {
+                snapshot.forEach(snap => {
+                    const data = snap.data();
+                    const id = data.deviceId || snap.id;
+                    if (id === 'main') {
+                        // Backward compatibility with the original project.
+                        applyDeviceTelemetry(DEFAULT_DEVICE, data);
+                    } else {
+                        applyDeviceTelemetry(id, data);
+                    }
+                });
+                renderDashboard();
+                updateChartsData();
+            }, error => {
+                console.error(error);
+                logSerialConsole(`[FIREBASE ERROR] Telemetry: ${error.message}`);
+            });
+
+            // Device metadata is separate from telemetry.
+            unsubscribeDevices = onSnapshot(devicesCol, snapshot => {
+                snapshot.forEach(snap => {
+                    const data = snap.data();
+                    const id = data.deviceId || snap.id;
+                    window.appData.devices[id] = {
+                        ...(window.appData.devices[id] || normalizeTelemetry({}, id)),
+                        ...data
+                    };
+                });
+                updateDeviceSelector();
+                updateMapLabels();
+            }, error => logSerialConsole(`[FIREBASE ERROR] Devices: ${error.message}`));
+
+            // Analytics/history now use real timestamps from Firestore.
+            const historyQ = query(historyCol, orderBy('timestamp', 'desc'), limit(500));
+            unsubscribeHistory = onSnapshot(historyQ, snapshot => {
+                window.appData.historyLog = snapshot.docs.map(d => ({id: d.id, ...d.data()}));
+                renderTables();
+                updateChartsData();
+            }, error => {
+                console.error(error);
+                logSerialConsole(`[FIREBASE ERROR] History: ${error.message}`);
+            });
+        }
+
+        async function ensureDefaultDeviceData() { return; }
+
+        async function initializeFirebase() {
+            const LOCAL_USER = 'admin';
+            const LOCAL_PASS = 'admin123';
+            const form = document.getElementById('loginForm');
+            const demoBtn = document.getElementById('demoLoginBtn');
+            const errorEl = document.getElementById('loginError');
+            const statusEl = document.getElementById('loginConnectionStatus');
+
+            const enterDashboard = async (username, mode = 'firebase') => {
+                window.appData.mode = mode;
+                window.appData.isSimulating = false;
+                const toggle = document.getElementById('simToggle');
+                if (toggle) toggle.checked = false;
+
+                currentUser = { uid: `${mode}-${username}`, email: username, isAnonymous: mode === 'demo' };
+                localStorage.setItem('smartResidualBinV3LoggedIn', '1');
+                localStorage.setItem('smartResidualBinV3User', username);
+                localStorage.setItem('smartResidualBinV3Mode', mode);
+                document.getElementById('loginScreen')?.classList.add('hidden');
+                document.getElementById('logoutBtn')?.classList.remove('hidden');
+                const label = document.getElementById('currentUserLabel');
+                if (label) label.textContent = `${mode === 'demo' ? 'Demo' : 'Admin'} • ${username}`;
+
+                if (mode === 'demo') {
+                    loadDemoState();
+                    setFirebaseConnected(false, 'Demo • Local Only');
+                    initAppUI();
+                    logSerialConsole('[AUTH] Mode Demo aktif. Semua data demo hanya disimpan di browser, TIDAK ke Firebase.');
+                    return;
+                }
+
+                initAppUI();
+                logSerialConsole('[AUTH] Login admin berhasil. Menyiapkan Firebase sebagai SATU-SATUNYA database data nyata...');
+                await initializeFirebaseBackend();
+            };
+
+            form?.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                const username = document.getElementById('loginEmail')?.value.trim();
+                const password = document.getElementById('loginPassword')?.value;
+                errorEl?.classList.add('hidden');
+                if (username === LOCAL_USER && password === LOCAL_PASS) {
+                    await enterDashboard(username, 'firebase');
+                } else if (errorEl) {
+                    errorEl.textContent = 'Username atau password salah. Gunakan admin / admin123 untuk akses utama.';
+                    errorEl.classList.remove('hidden');
+                }
+            });
+
+            demoBtn?.addEventListener('click', async () => {
+                errorEl?.classList.add('hidden');
+                await enterDashboard('demo', 'demo');
+            });
+
+            if (localStorage.getItem('smartResidualBinV3LoggedIn') === '1') {
+                const savedUser = localStorage.getItem('smartResidualBinV3User') || LOCAL_USER;
+                const savedMode = localStorage.getItem('smartResidualBinV3Mode') || 'firebase';
+                await enterDashboard(savedUser, savedMode);
+                return;
+            }
+
+            if (statusEl) statusEl.textContent = 'Pilih login Admin untuk Firebase, atau Mode Demo untuk database lokal.';
+        }
+
+        async function initializeFirebaseBackend() {
+            // Normal/Admin mode: Firebase is the ONLY persistence layer.
+            // Never initialize Firebase for Demo mode.
+            if (window.appData.mode !== 'firebase') return;
+            try {
+                const config = (typeof __firebase_config !== 'undefined') ? JSON.parse(__firebase_config) : firebaseConfig;
+                if (!config?.apiKey || config.apiKey === 'demo-api-key' || !config?.projectId || config.projectId === 'demo-project') {
+                    throw new Error('Konfigurasi Firebase asli belum dipasang.');
+                }
+                firebaseApp = initializeApp(config);
+                db = getFirestore(firebaseApp);
+                auth = getAuth(firebaseApp);
+                window.db = db;
+                window.auth = auth;
+
+                // Backend auth only; application login remains admin/admin123.
+                // Anonymous auth is used so Firestore can enforce authenticated access without another database.
+                try {
+                    if (initialAuthToken) {
+                        const cred = await signInWithCustomToken(auth, initialAuthToken);
+                        currentUser = cred.user;
+                    } else {
+                        const cred = await signInAnonymously(auth);
+                        currentUser = cred.user;
+                    }
+                } catch (authError) {
+                    throw new Error(`Firebase Authentication gagal: ${firebaseAuthMessage(authError.code)} `);
+                }
+
+                setFirebaseConnected(true, 'Online • Firebase');
+                logSerialConsole(`[FIREBASE] Terhubung. Database nyata: Firestore. Mode simulasi tetap tidak menulis data.`);
+                await subscribeRealtime();
+            } catch (e) {
+                console.warn('Firebase init failed:', e);
+                db = null;
+                auth = null;
+                setFirebaseConnected(false, 'Belum dikonfigurasi');
+                logSerialConsole(`[FIREBASE ERROR] ${e.message}`);
+                showToast('Firebase belum terhubung. Pasang konfigurasi Firebase asli sebelum memakai Arduino/ESP32.', 'error');
+            }
+        }
+
+        function firebaseAuthMessage(code) {
+            const map = {
+                'auth/invalid-credential': 'Kredensial Firebase tidak valid.',
+                'auth/invalid-email': 'Format email Firebase tidak valid.',
+                'auth/user-disabled': 'Akun Firebase dinonaktifkan.',
+                'auth/too-many-requests': 'Terlalu banyak percobaan.',
+                'auth/network-request-failed': 'Jaringan bermasalah.',
+                'auth/operation-not-allowed': 'Anonymous Authentication belum diaktifkan.'
+            };
+            return map[code] || `Kode ${code || 'unknown-error'}.`;
+        }
+
+        function initAppUI() {
+            document.getElementById('openSidebarBtn')?.addEventListener('click', () => {
+                document.getElementById('sidebar')?.classList.remove('-translate-x-full');
+            });
+            document.getElementById('closeSidebarBtn')?.addEventListener('click', () => {
+                document.getElementById('sidebar')?.classList.add('-translate-x-full');
+            });
+
+            document.getElementById('deviceSelector')?.addEventListener('change', event => {
+                const id = event.target.value;
+                window.appData.selectedDeviceId = id;
+                const d = currentDevice();
+                window.appData.weight = d.weight;
+                window.appData.capacity = d.capacity;
+                renderDashboard();
+                updateChartsData();
+                renderTables();
+            });
+
+            const threshold = document.getElementById('thresholdRange');
+            if (threshold) {
+                threshold.value = String(window.appData.threshold);
+                const syncThreshold = () => {
+                    window.appData.threshold = Number(threshold.value);
+                    const label = document.getElementById('thresholdVal');
+                    if (label) label.innerText = `${window.appData.threshold}%`;
+                    renderDashboard();
+                };
+                threshold.addEventListener('input', syncThreshold);
+                syncThreshold();
+            }
+
+            initCharts();
+            window.switchTab('beranda');
+            renderDashboard();
+            renderTables();
+            updateDeviceSelector();
+            updateMapLabels();
+
+            // Simulation starts only after the user explicitly turns the toggle ON.
+        }
+
+        // Export selected functions used by the original inline HTML handlers.
+        window.filterHistoryTable = filterHistoryTable;
+        window.renderTables = renderTables;
+        window.updateChartsData = updateChartsData;
+        window.parseIncomingSerialData = parseIncomingSerialData;
+
+        // Initialize Firebase as soon as the module loads.
+        initializeFirebase();
+    </script>
+
+</body>
+</html>
